@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyScout</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --surface:   #1a1a1a;
+      --border:    #2a2a2a;
+      --text:      #e5e5e5;
+      --muted:     #737373;
+      --accent:    #f59e0b;
+      --accent-dim:#78450a;
+      --danger:    #ef4444;
+      --radius:    10px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ── Auth screen ── */
+    #auth-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      max-width: 400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .auth-logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .auth-tagline {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    /* ── Form elements ── */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .field { margin-bottom: 18px; }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0f0f0f;
+      flex: 1;
+    }
+
+    .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      flex: 1;
+    }
+
+    .btn-ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .error-msg {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 6px;
+      color: #fca5a5;
+      font-size: 13px;
+      padding: 10px 12px;
+      margin-top: 14px;
+      display: none;
+    }
+
+    /* ── App screen ── */
+    #app-screen { display: none; }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.4px;
+    }
+
+    /* ── Compose ── */
+    .compose {
+      padding: 24px 0 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    textarea {
+      resize: none;
+      min-height: 96px;
+      margin-bottom: 10px;
+    }
+
+    .compose-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .char-count {
+      font-size: 12px;
+      color: var(--muted);
+      align-self: center;
+      margin-right: auto;
+    }
+
+    /* ── Notes list ── */
+    .notes-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0 12px;
+    }
+
+    .notes-header h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .notes-count {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 60px;
+    }
+
+    .note-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      transition: border-color 0.15s;
+    }
+
+    .note-card:hover { border-color: #3a3a3a; }
+
+    .note-content {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .note-date {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .empty-state p:first-child {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-notes {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .auth-box { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Auth screen ── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">MyScout</div>
+    <div class="auth-tagline">Your personal knowledge base.</div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-login">Log in</button>
+      <button class="btn-ghost"   id="btn-signup">Sign up</button>
+    </div>
+
+    <div class="error-msg" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ── App screen ── -->
+<div id="app-screen">
+  <div class="container">
+
+    <header class="app-header">
+      <span class="app-logo">MyScout</span>
+      <button class="btn-ghost btn-sm" id="btn-logout">Log out</button>
+    </header>
+
+    <section class="compose">
+      <div class="field" style="margin-bottom:0">
+        <textarea id="note-input" placeholder="Save something interesting…" maxlength="10000"></textarea>
+      </div>
+      <div class="compose-footer">
+        <span class="char-count" id="char-count">0 / 10,000</span>
+        <button class="btn-primary btn-sm" id="btn-save">Save</button>
+      </div>
+    </section>
+
+    <div class="notes-header">
+      <h2>Saved</h2>
+      <span class="notes-count" id="notes-count"></span>
+    </div>
+
+    <div class="notes-list" id="notes-list">
+      <div class="loading-notes"><span class="spinner"></span> Loading…</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Supabase JS (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────────────────────
+  // Replace these two values with your project's URL and anon key.
+  // These are safe for frontend use — RLS policies protect all data.
+  const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // ── DOM refs ─────────────────────────────────────────────────────────────────
+  const authScreen  = document.getElementById('auth-screen');
+  const appScreen   = document.getElementById('app-screen');
+  const emailInput  = document.getElementById('email');
+  const passInput   = document.getElementById('password');
+  const btnLogin    = document.getElementById('btn-login');
+  const btnSignup   = document.getElementById('btn-signup');
+  const authError   = document.getElementById('auth-error');
+  const btnLogout   = document.getElementById('btn-logout');
+  const noteInput   = document.getElementById('note-input');
+  const charCount   = document.getElementById('char-count');
+  const btnSave     = document.getElementById('btn-save');
+  const notesList   = document.getElementById('notes-list');
+  const notesCount  = document.getElementById('notes-count');
+
+  // ── UI helpers ───────────────────────────────────────────────────────────────
+  function showAuth() {
+    authScreen.style.display = 'flex';
+    appScreen.style.display  = 'none';
+  }
+
+  function showApp() {
+    authScreen.style.display = 'none';
+    appScreen.style.display  = 'block';
+    loadNotes();
+  }
+
+  function setAuthError(msg) {
+    authError.textContent    = msg;
+    authError.style.display  = msg ? 'block' : 'none';
+  }
+
+  function setAuthBusy(busy) {
+    btnLogin.disabled  = busy;
+    btnSignup.disabled = busy;
+    emailInput.disabled = busy;
+    passInput.disabled  = busy;
+  }
+
+  function setSaveBusy(busy) {
+    btnSave.disabled   = busy;
+    noteInput.disabled = busy;
+    btnSave.textContent = busy ? 'Saving…' : 'Save';
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    });
+  }
+
+  function renderNotes(notes) {
+    notesCount.textContent = notes.length
+      ? `${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`
+      : '';
+
+    if (!notes.length) {
+      notesList.innerHTML = `
+        <div class="empty-state">
+          <p>📓</p>
+          <p>Nothing saved yet.<br>Write your first note above.</p>
+        </div>`;
+      return;
+    }
+
+    notesList.innerHTML = notes.map(n => `
+      <article class="note-card">
+        <div class="note-content">${escapeHtml(n.content)}</div>
+        <div class="note-date">${formatDate(n.created_at)}</div>
+      </article>
+    `).join('');
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Auth ─────────────────────────────────────────────────────────────────────
+  async function handleLogin() {
+    const email = emailInput.value.trim();
+    const pass  = passInput.value;
+    if (!email || !pass) { setAuthError('Email and password are required.'); return; }
+
+    setAuthBusy(true);
+    setAuthError('');
+    const { error } = await db.auth.signInWithPassword({ email, password: pass });
+    setAuthBusy(false);
+    if (error) setAuthError(error.message);
+  }
+
+  async function handleSignup() {
+    const email = emailInput.value.trim();
+    const pass  = passInput.value;
+    if (!email || !pass) { setAuthError('Email and password are required.'); return; }
+    if (pass.length < 6)  { setAuthError('Password must be at least 6 characters.'); return; }
+
+    setAuthBusy(true);
+    setAuthError('');
+    const { error } = await db.auth.signUp({ email, password: pass });
+    setAuthBusy(false);
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      setAuthError('');
+      // Supabase may require email confirmation depending on project settings.
+      // If auto-confirm is on, onAuthStateChange fires immediately.
+      // If not, show a prompt.
+      const { data } = await db.auth.getSession();
+      if (!data.session) {
+        authError.style.display = 'block';
+        authError.style.color   = '#86efac';
+        authError.style.background = 'rgba(74,222,128,0.08)';
+        authError.style.border  = '1px solid rgba(74,222,128,0.25)';
+        authError.textContent   = 'Check your email to confirm your account.';
+      }
+    }
+  }
+
+  // ── Notes ─────────────────────────────────────────────────────────────────────
+  async function loadNotes() {
+    notesList.innerHTML = '<div class="loading-notes"><span class="spinner"></span> Loading…</div>';
+
+    const { data, error } = await db
+      .from('notes')
+      .select('id, content, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      notesList.innerHTML = `<div class="empty-state"><p style="color:var(--muted);font-size:14px">Failed to load notes.</p></div>`;
+      return;
+    }
+    renderNotes(data);
+  }
+
+  async function saveNote() {
+    const content = noteInput.value.trim();
+    if (!content) return;
+
+    setSaveBusy(true);
+    const { data: { session } } = await db.auth.getSession();
+
+    const { error } = await db.from('notes').insert({
+      user_id: session.user.id,
+      content
+    });
+
+    setSaveBusy(false);
+    if (error) {
+      alert('Failed to save note. Please try again.');
+      return;
+    }
+
+    noteInput.value = '';
+    charCount.textContent = '0 / 10,000';
+    loadNotes();
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────────
+  btnLogin.addEventListener('click', handleLogin);
+  btnSignup.addEventListener('click', handleSignup);
+
+  btnLogout.addEventListener('click', async () => {
+    await db.auth.signOut();
+  });
+
+  btnSave.addEventListener('click', saveNote);
+
+  noteInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveNote();
+  });
+
+  noteInput.addEventListener('input', () => {
+    charCount.textContent = `${noteInput.value.length.toLocaleString()} / 10,000`;
+  });
+
+  passInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  // ── Auth state ────────────────────────────────────────────────────────────────
+  db.auth.onAuthStateChange((_event, session) => {
+    if (session) {
+      showApp();
+    } else {
+      showAuth();
+    }
+  });
+
+  // Initial session check
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session) showApp(); else showAuth();
+  });
+</script>
+</body>
+</html>
