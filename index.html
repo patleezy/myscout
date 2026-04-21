@@ -396,9 +396,15 @@
       font-size: 15px;
       line-height: 1.7;
       color: var(--text);
-      white-space: pre-wrap;
+      white-space: pre-line;
       word-break: break-word;
     }
+
+    .note-content a { color: var(--accent); text-decoration: none; }
+    .note-content a:hover { text-decoration: underline; }
+    .note-content strong { font-weight: 700; }
+    .note-content em { font-style: italic; }
+    .note-content del { text-decoration: line-through; opacity: 0.65; }
 
     .note-footer {
       display: flex;
@@ -443,6 +449,7 @@
 
     /* OG image preview */
     .note-og {
+      display: block;
       margin: -20px -22px 16px;
       border-radius: var(--radius) var(--radius) 0 0;
       overflow: hidden;
@@ -455,9 +462,13 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      transition: opacity 0.15s;
     }
 
+    .note-og:hover img { opacity: 0.88; }
+
     .note-og-title {
+      display: block;
       font-size: 12px;
       font-weight: 600;
       color: var(--muted-2);
@@ -465,7 +476,11 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-decoration: none;
+      transition: color 0.15s;
     }
+
+    .note-og-title:hover { color: var(--text); }
 
     /* Inline AI summary */
     .note-summary {
@@ -522,6 +537,48 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Formatting toolbar ──────────────────────────────────── */
+    .compose-editor {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .compose-editor:focus-within { border-color: rgba(245, 158, 11, 0.3); }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 7px 10px;
+      background: var(--surface);
+    }
+
+    .toolbar-btn {
+      background: none;
+      border: none;
+      color: var(--muted-2);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      line-height: 1;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .toolbar-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+    .toolbar-sep { width: 1px; height: 14px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+    /* Textarea border now owned by .compose-editor wrapper */
+    .compose-textarea {
+      border: none !important;
+      border-top: 1px solid var(--border) !important;
+      border-radius: 0 !important;
+    }
 
     /* ── Search ───────────────────────────────────────────────── */
     .search-wrap { padding: 20px 0 0; }
@@ -622,6 +679,12 @@
     @media (max-width: 440px) {
       .auth-card { padding: 36px 24px 32px; }
     }
+
+    @media (max-width: 480px) {
+      .search-input,
+      .compose-textarea,
+      .auth-input { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
@@ -691,12 +754,22 @@
     </div>
 
     <section class="compose">
-      <textarea
-        class="compose-textarea"
-        id="note-input"
-        placeholder="Save something interesting…"
-        maxlength="10000"
-      ></textarea>
+      <div class="compose-editor">
+        <div class="toolbar" id="toolbar">
+          <button class="toolbar-btn" onclick="wrapSel('**','**')" title="Bold (⌘B)"><b>B</b></button>
+          <button class="toolbar-btn" onclick="wrapSel('*','*')" title="Italic (⌘I)"><i>I</i></button>
+          <button class="toolbar-btn" onclick="wrapSel('~~','~~')" title="Strikethrough"><s>S</s></button>
+          <span class="toolbar-sep"></span>
+          <button class="toolbar-btn" onclick="insertList('- ')" title="Bullet list">• List</button>
+          <button class="toolbar-btn" onclick="insertList('1. ')" title="Numbered list">1. List</button>
+        </div>
+        <textarea
+          class="compose-textarea"
+          id="note-input"
+          placeholder="Save something interesting…"
+          maxlength="10000"
+        ></textarea>
+      </div>
       <div class="compose-footer">
         <span class="char-count" id="char-count">0 / 10,000</span>
         <button class="btn-save" id="btn-save">Save</button>
@@ -864,16 +937,18 @@
             `<button class="tag-pill" onclick="filterByTag('${escapeHtml(t)}')">${escapeHtml(t)}</button>`
           ).join('') : '');
 
-      const ogHtml = n.og_image ? `
-        <div class="note-og">
+      const noteUrl = extractUrl(n.content);
+      const ogHref  = noteUrl ? ` href="${escapeHtml(noteUrl)}" target="_blank" rel="noopener noreferrer"` : '';
+      const ogHtml  = n.og_image ? `
+        <a class="note-og"${ogHref}>
           <img src="${escapeHtml(n.og_image)}" alt="" loading="lazy" onerror="this.closest('.note-og').remove()" />
-        </div>
-        ${n.og_title ? `<div class="note-og-title">${escapeHtml(n.og_title)}</div>` : ''}` : '';
+        </a>
+        ${n.og_title ? `<a class="note-og-title"${ogHref}>${escapeHtml(n.og_title)}</a>` : ''}` : '';
 
       return `
       <article class="note-card" data-id="${n.id}">
         ${ogHtml}
-        <div class="note-content">${escapeHtml(n.content)}</div>
+        <div class="note-content">${renderMarkdown(n.content)}</div>
         ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
         <div class="note-footer">
           <span class="note-date">${formatDate(n.created_at)}</span>
@@ -1113,6 +1188,56 @@
     renderNotes(allNotes);
   }
 
+  // ── Text helpers ─────────────────────────────────────────────────────────────
+  function extractUrl(text) {
+    const m = text.match(/https?:\/\/[^\s]+/);
+    return m ? m[0].replace(/[.,;!?)]+$/, '') : null;
+  }
+
+  function linkifyAndEscape(text) {
+    const urlRe = /(https?:\/\/[^\s]+)/g;
+    return text.split(urlRe).map((seg, i) => {
+      if (i % 2 === 1) {
+        const clean = seg.replace(/[.,;!?)]+$/, '');
+        return `<a href="${escapeHtml(clean)}" target="_blank" rel="noopener noreferrer">${escapeHtml(clean)}</a>`;
+      }
+      return escapeHtml(seg);
+    }).join('');
+  }
+
+  function renderMarkdown(raw) {
+    return linkifyAndEscape(raw)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+      .replace(/~~(.+?)~~/g,     '<del>$1</del>');
+  }
+
+  function wrapSel(before, after) {
+    const el = noteInput;
+    const start = el.selectionStart, end = el.selectionEnd;
+    const sel = el.value.slice(start, end) || 'text';
+    el.setRangeText(before + sel + after, start, end, 'end');
+    if (start === end)
+      el.setSelectionRange(start + before.length, start + before.length + sel.length);
+    el.focus(); el.dispatchEvent(new Event('input'));
+  }
+
+  function insertList(prefix) {
+    const el = noteInput;
+    const start = el.selectionStart, val = el.value;
+    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+    const lineEnd = val.indexOf('\n', start);
+    const end = lineEnd === -1 ? val.length : lineEnd;
+    const line = val.slice(lineStart, end);
+    const stripped = line.replace(/^- |^\d+\. /, '');
+    if (line.startsWith(prefix)) {
+      el.setRangeText(stripped, lineStart, end, 'end');
+    } else {
+      el.setRangeText(prefix + (line.trim() ? stripped : ''), lineStart, end, 'end');
+    }
+    el.focus(); el.dispatchEvent(new Event('input'));
+  }
+
   // ── Event listeners ───────────────────────────────────────────────────────────
   authBtn.addEventListener('click', handleAuth);
 
@@ -1125,7 +1250,9 @@
   btnSave.addEventListener('click', saveNote);
 
   noteInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveNote();
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { saveNote(); return; }
+    if (e.key === 'b' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); wrapSel('**', '**'); }
+    if (e.key === 'i' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); wrapSel('*', '*'); }
   });
 
   noteInput.addEventListener('input', () => {
