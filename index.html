@@ -441,6 +441,32 @@
 
     .btn-delete:hover { color: #ef4444; }
 
+    /* OG image preview */
+    .note-og {
+      margin: -20px -22px 16px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      overflow: hidden;
+      aspect-ratio: 2 / 1;
+      background: var(--bg);
+    }
+
+    .note-og img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .note-og-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted-2);
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* Inline AI summary */
     .note-summary {
       margin-top: 16px;
@@ -838,8 +864,15 @@
             `<button class="tag-pill" onclick="filterByTag('${escapeHtml(t)}')">${escapeHtml(t)}</button>`
           ).join('') : '');
 
+      const ogHtml = n.og_image ? `
+        <div class="note-og">
+          <img src="${escapeHtml(n.og_image)}" alt="" loading="lazy" onerror="this.closest('.note-og').remove()" />
+        </div>
+        ${n.og_title ? `<div class="note-og-title">${escapeHtml(n.og_title)}</div>` : ''}` : '';
+
       return `
       <article class="note-card" data-id="${n.id}">
+        ${ogHtml}
         <div class="note-content">${escapeHtml(n.content)}</div>
         ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
         <div class="note-footer">
@@ -889,7 +922,7 @@
 
     const { data, error } = await db
       .from('notes')
-      .select('id, content, tags, created_at')
+      .select('id, content, tags, og_image, og_title, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
