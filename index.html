@@ -483,6 +483,102 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Search ───────────────────────────────────────────────── */
+    .search-wrap { padding: 20px 0 0; }
+
+    .search-field {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 11px 36px 11px 40px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-input:focus { border-color: rgba(245, 158, 11, 0.3); }
+    .search-input::placeholder { color: var(--muted); }
+    .search-input::-webkit-search-cancel-button { display: none; }
+
+    .btn-search-clear {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .btn-search-clear:hover { color: var(--text); }
+
+    /* ── Tags ─────────────────────────────────────────────────── */
+    .note-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    .tag-pill {
+      background: none;
+      border: 1px solid rgba(245, 158, 11, 0.18);
+      border-radius: 20px;
+      color: var(--muted-2);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 9px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .tag-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+    .tag-pill.loading {
+      border-color: rgba(255,255,255,0.06);
+      color: var(--muted);
+      cursor: default;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+
+    .tag-filter-chip {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 20px;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+
+    .tag-filter-chip:hover { opacity: 0.75; }
+
     @media (max-width: 440px) {
       .auth-card { padding: 36px 24px 32px; }
     }
@@ -542,6 +638,18 @@
       </div>
     </header>
 
+    <div class="search-wrap">
+      <div class="search-field">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input class="search-input" type="search" id="search-input"
+               placeholder="Search your notes…" autocomplete="off" />
+        <button class="btn-search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+      </div>
+    </div>
+
     <section class="compose">
       <textarea
         class="compose-textarea"
@@ -556,8 +664,13 @@
     </section>
 
     <div class="notes-header">
-      <span class="notes-label">Saved</span>
-      <span class="notes-count" id="notes-count"></span>
+      <span class="notes-label" id="notes-label">Saved</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="notes-count" id="notes-count"></span>
+        <button class="tag-filter-chip hidden" id="tag-filter-chip" onclick="clearTagFilter()">
+          <span id="tag-filter-text"></span> ✕
+        </button>
+      </div>
     </div>
 
     <div class="notes-list" id="notes-list">
@@ -595,8 +708,19 @@
   const noteInput   = document.getElementById('note-input');
   const charCount   = document.getElementById('char-count');
   const btnSave     = document.getElementById('btn-save');
-  const notesList   = document.getElementById('notes-list');
-  const notesCount  = document.getElementById('notes-count');
+  const notesList      = document.getElementById('notes-list');
+  const notesCount     = document.getElementById('notes-count');
+  const notesLabel     = document.getElementById('notes-label');
+  const searchInput    = document.getElementById('search-input');
+  const searchClear    = document.getElementById('search-clear');
+  const tagFilterChip  = document.getElementById('tag-filter-chip');
+  const tagFilterText  = document.getElementById('tag-filter-text');
+
+  // ── App state ─────────────────────────────────────────────────────────────────
+  let allNotes       = [];
+  let activeTag      = null;
+  let recentlySavedId = null;
+  let searchTimer    = null;
 
   // ── Auth mode toggle ──────────────────────────────────────────────────────────
   let authMode = 'login';
@@ -677,7 +801,7 @@
       .replace(/"/g,  '&quot;');
   }
 
-  function renderNotes(notes) {
+  function renderNotes(notes, { searchMode = false } = {}) {
     notesCount.textContent = notes.length
       ? `${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`
       : '';
@@ -685,15 +809,25 @@
     if (!notes.length) {
       notesList.innerHTML = `
         <div class="empty-state">
-          <div class="empty-icon">📓</div>
-          <div class="empty-text">Nothing saved yet.<br>Write your first note above.</div>
+          <div class="empty-icon">${searchMode ? '🔍' : '📓'}</div>
+          <div class="empty-text">${searchMode ? 'No matching notes found.' : 'Nothing saved yet.<br>Write your first note above.'}</div>
         </div>`;
       return;
     }
 
-    notesList.innerHTML = notes.map(n => `
+    notesList.innerHTML = notes.map(n => {
+      const hasTags    = Array.isArray(n.tags) && n.tags.length > 0;
+      const isTagging  = n.id === recentlySavedId && !hasTags;
+      const tagsHtml   = isTagging
+        ? `<span class="tag-pill loading">✦ tagging…</span>`
+        : (hasTags ? n.tags.map(t =>
+            `<button class="tag-pill" onclick="filterByTag('${escapeHtml(t)}')">${escapeHtml(t)}</button>`
+          ).join('') : '');
+
+      return `
       <article class="note-card" data-id="${n.id}">
         <div class="note-content">${escapeHtml(n.content)}</div>
+        ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
         <div class="note-footer">
           <span class="note-date">${formatDate(n.created_at)}</span>
           <button class="btn-summarize" onclick="summarizeNote('${n.id}', this)">
@@ -701,8 +835,8 @@
           </button>
         </div>
         <div class="note-summary hidden" id="summary-${n.id}"></div>
-      </article>
-    `).join('');
+      </article>`;
+    }).join('');
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -740,14 +874,17 @@
 
     const { data, error } = await db
       .from('notes')
-      .select('id, content, created_at')
+      .select('id, content, tags, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
       notesList.innerHTML = '<div class="empty-state"><div class="empty-text" style="color:var(--muted)">Failed to load notes.</div></div>';
       return;
     }
-    renderNotes(data);
+    allNotes = data;
+    notesLabel.textContent = 'Saved';
+    tagFilterChip.classList.add('hidden');
+    renderNotes(activeTag ? allNotes.filter(n => n.tags?.includes(activeTag)) : allNotes);
   }
 
   async function saveNote() {
@@ -757,14 +894,27 @@
     setSaveBusy(true);
     const { data: { session } } = await db.auth.getSession();
 
-    const { error } = await db.from('notes').insert({ user_id: session.user.id, content });
-    setSaveBusy(false);
+    const { data: inserted, error } = await db
+      .from('notes')
+      .insert({ user_id: session.user.id, content })
+      .select('id')
+      .single();
 
+    setSaveBusy(false);
     if (error) { alert('Failed to save note. Please try again.'); return; }
 
     noteInput.value       = '';
     charCount.textContent = '0 / 10,000';
-    loadNotes();
+    recentlySavedId       = inserted.id;
+    clearSearch();
+    activeTag = null;
+    await loadNotes();
+
+    // Generate embedding + tags in the background; reload when done
+    embedNote(inserted.id, content, session.access_token).then(() => {
+      recentlySavedId = null;
+      loadNotes();
+    });
   }
 
   // ── Summarize ─────────────────────────────────────────────────────────────────
@@ -812,6 +962,92 @@
     btn.style.display = 'none';
   }
 
+  // ── Embed (background) ───────────────────────────────────────────────────────
+  async function embedNote(noteId, content, token) {
+    try {
+      await fetch('/api/embed', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ noteId, content })
+      });
+    } catch { /* silent fail — tags just won't appear */ }
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────────
+  async function searchNotes(query) {
+    if (!query.trim()) { clearSearch(); return; }
+
+    activeTag = null;
+    tagFilterChip.classList.add('hidden');
+    notesLabel.textContent = `Results for "${query}"`;
+    notesList.innerHTML    = '<div class="loading-state"><span class="spinner"></span> Searching…</div>';
+
+    const { data: { session } } = await db.auth.getSession();
+
+    let res;
+    try {
+      res = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ query })
+      });
+    } catch {
+      notesList.innerHTML = '<div class="empty-state"><div class="empty-text" style="color:var(--muted)">Search failed. Try again.</div></div>';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok) {
+      notesList.innerHTML = `<div class="empty-state"><div class="empty-text" style="color:var(--muted)">${data.error || 'Search failed.'}</div></div>`;
+      return;
+    }
+
+    notesCount.textContent = data.results.length
+      ? `${data.results.length} ${data.results.length === 1 ? 'result' : 'results'}`
+      : '';
+    renderNotes(data.results, { searchMode: true });
+  }
+
+  function clearSearch() {
+    searchInput.value = '';
+    searchClear.classList.add('hidden');
+    notesLabel.textContent = activeTag ? `Tag: ${activeTag}` : 'Saved';
+    if (!activeTag) {
+      notesCount.textContent = allNotes.length
+        ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
+      renderNotes(allNotes);
+    }
+  }
+
+  // ── Tag filter ────────────────────────────────────────────────────────────────
+  function filterByTag(tag) {
+    activeTag = tag;
+    searchInput.value = '';
+    searchClear.classList.add('hidden');
+    notesLabel.textContent  = 'Saved';
+    tagFilterText.textContent = tag;
+    tagFilterChip.classList.remove('hidden');
+    const filtered = allNotes.filter(n => n.tags?.includes(tag));
+    notesCount.textContent = filtered.length
+      ? `${filtered.length} ${filtered.length === 1 ? 'note' : 'notes'}` : '';
+    renderNotes(filtered);
+  }
+
+  function clearTagFilter() {
+    activeTag = null;
+    tagFilterChip.classList.add('hidden');
+    notesLabel.textContent = 'Saved';
+    notesCount.textContent = allNotes.length
+      ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
+    renderNotes(allNotes);
+  }
+
   // ── Event listeners ───────────────────────────────────────────────────────────
   authBtn.addEventListener('click', handleAuth);
 
@@ -829,6 +1065,18 @@
 
   noteInput.addEventListener('input', () => {
     charCount.textContent = `${noteInput.value.length.toLocaleString()} / 10,000`;
+  });
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim();
+    searchClear.classList.toggle('hidden', !q);
+    clearTimeout(searchTimer);
+    if (!q) { clearSearch(); return; }
+    searchTimer = setTimeout(() => searchNotes(q), 500);
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') clearSearch();
   });
 
   // ── Auth state ────────────────────────────────────────────────────────────────
