@@ -1,0 +1,42 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#080808"/>
+
+  <!-- Amber glow — top right -->
+  <radialGradient id="g-amber" cx="75%" cy="15%" r="45%" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="#f59e0b" stop-opacity="0.22"/>
+    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#g-amber)"/>
+
+  <!-- Purple glow — bottom left -->
+  <radialGradient id="g-purple" cx="20%" cy="85%" r="40%" gradientUnits="objectBoundingBox">
+    <stop offset="0%"   stop-color="#7c3aed" stop-opacity="0.15"/>
+    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#g-purple)"/>
+
+  <!-- Logo mark -->
+  <rect x="556" y="186" width="88" height="88" rx="22" fill="#f59e0b"/>
+  <text x="600" y="252"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="800" fill="#0a0a0a"
+        text-anchor="middle" dominant-baseline="auto">M</text>
+
+  <!-- Wordmark -->
+  <text x="600" y="360"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="72" font-weight="700" fill="#e8e8e8"
+        text-anchor="middle" letter-spacing="-2">MyScout</text>
+
+  <!-- Tagline -->
+  <text x="600" y="418"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="26" font-weight="400" fill="#666666"
+        text-anchor="middle" letter-spacing="-0.3">Save anything interesting. Ask questions about it later.</text>
+
+  <!-- Subtle bottom border accent -->
+  <rect x="540" y="476" width="120" height="3" rx="1.5" fill="#f59e0b" opacity="0.35"/>
+
+</svg>

@@ -4,19 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MyScout</title>
+
+  <!-- Open Graph / Social -->
+  <meta name="description" content="Save anything interesting. Ask questions about it later." />
+  <meta property="og:title"       content="MyScout" />
+  <meta property="og:description" content="Save anything interesting. Ask questions about it later." />
+  <meta property="og:image"       content="https://myscout-seven.vercel.app/og.svg" />
+  <meta property="og:url"         content="https://myscout-seven.vercel.app" />
+  <meta property="og:type"        content="website" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <meta name="twitter:title"      content="MyScout" />
+  <meta name="twitter:description" content="Save anything interesting. Ask questions about it later." />
+  <meta name="twitter:image"      content="https://myscout-seven.vercel.app/og.svg" />
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0f0f0f;
-      --surface:   #1a1a1a;
-      --border:    #2a2a2a;
-      --text:      #e5e5e5;
-      --muted:     #737373;
-      --accent:    #f59e0b;
-      --accent-dim:#78450a;
-      --danger:    #ef4444;
-      --radius:    10px;
+      --bg:      #080808;
+      --surface: #111111;
+      --border:  rgba(255, 255, 255, 0.07);
+      --text:    #e8e8e8;
+      --muted:   #505050;
+      --muted-2: #888888;
+      --accent:  #f59e0b;
+      --radius:  13px;
     }
 
     html, body {
@@ -26,244 +38,442 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 16px;
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Layout ── */
-    .container {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 0 16px;
-    }
-
-    /* ── Auth screen ── */
+    /* ── Auth screen ──────────────────────────────────────────── */
     #auth-screen {
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding: 40px 16px;
+      padding: 24px 16px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .auth-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 36px 32px;
-      max-width: 400px;
-      margin: 0 auto;
+    /* Gradient blobs */
+    #auth-screen::before,
+    #auth-screen::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #auth-screen::before {
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.13) 0%, transparent 70%);
+      top: -120px;
+      right: -80px;
+    }
+
+    #auth-screen::after {
+      width: 580px;
+      height: 580px;
+      background: radial-gradient(circle, rgba(109, 40, 217, 0.1) 0%, transparent 70%);
+      bottom: -140px;
+      left: -100px;
+    }
+
+    .auth-card {
+      position: relative;
+      z-index: 1;
       width: 100%;
+      max-width: 420px;
+      background: rgba(10, 10, 10, 0.8);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 22px;
+      padding: 44px 40px 38px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 32px 64px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
-    .auth-logo {
-      font-size: 22px;
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .auth-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0a0a0a;
+      flex-shrink: 0;
+    }
+
+    .auth-brand-name {
+      font-size: 16px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .auth-heading {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
       letter-spacing: -0.5px;
+      line-height: 1.2;
       margin-bottom: 6px;
     }
 
-    .auth-tagline {
-      color: var(--muted);
+    .auth-sub {
       font-size: 14px;
-      margin-bottom: 32px;
+      color: var(--muted-2);
+      margin-bottom: 28px;
     }
 
-    /* ── Form elements ── */
-    label {
+    .auth-field { margin-bottom: 14px; }
+
+    .auth-label {
       display: block;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted-2);
+      letter-spacing: 0.02em;
       margin-bottom: 6px;
     }
 
-    input[type="email"],
-    input[type="password"],
-    textarea {
+    .auth-input {
       width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 10px;
       color: var(--text);
       font-family: inherit;
       font-size: 15px;
-      padding: 10px 12px;
+      padding: 11px 14px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, background 0.15s;
     }
 
-    input[type="email"]:focus,
-    input[type="password"]:focus,
-    textarea:focus {
-      border-color: var(--accent);
+    .auth-input:focus {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(245, 158, 11, 0.4);
     }
 
-    .field { margin-bottom: 18px; }
+    .auth-input::placeholder { color: var(--muted); }
 
-    .btn-row {
-      display: flex;
-      gap: 10px;
+    .auth-btn {
+      width: 100%;
       margin-top: 8px;
-    }
-
-    button {
+      background: linear-gradient(150deg, #f59e0b 0%, #d97706 100%);
+      color: #0a0a0a;
       font-family: inherit;
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 700;
       border: none;
-      border-radius: 6px;
-      padding: 10px 20px;
+      border-radius: 10px;
+      padding: 13px;
       cursor: pointer;
-      transition: opacity 0.15s, background 0.15s;
+      letter-spacing: -0.1px;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
+      transition: opacity 0.15s, box-shadow 0.15s;
     }
 
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #0f0f0f;
-      flex: 1;
+    .auth-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      box-shadow: 0 4px 28px rgba(245, 158, 11, 0.3);
     }
 
-    .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+    .auth-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .btn-ghost {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-      flex: 1;
-    }
-
-    .btn-ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-
-    .btn-sm {
-      padding: 6px 14px;
+    .auth-toggle {
+      text-align: center;
+      margin-top: 20px;
       font-size: 13px;
+      color: var(--muted-2);
+    }
+
+    .auth-toggle-link {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: inherit;
       font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 4px;
     }
 
-    .error-msg {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 6px;
-      color: #fca5a5;
+    .auth-toggle-link:hover { text-decoration: underline; }
+
+    .auth-msg {
+      border-radius: 8px;
       font-size: 13px;
-      padding: 10px 12px;
+      padding: 10px 13px;
       margin-top: 14px;
       display: none;
     }
 
-    /* ── App screen ── */
+    .auth-msg.error {
+      background: rgba(239, 68, 68, 0.07);
+      border: 1px solid rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+    }
+
+    .auth-msg.success {
+      background: rgba(74, 222, 128, 0.06);
+      border: 1px solid rgba(74, 222, 128, 0.16);
+      color: #86efac;
+    }
+
+    /* ── App screen ───────────────────────────────────────────── */
     #app-screen { display: none; }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
 
     .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 0 18px;
+      padding: 22px 0 20px;
       border-bottom: 1px solid var(--border);
     }
 
     .app-logo {
-      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--accent);
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
     }
 
-    /* ── Compose ── */
+    .app-mark {
+      width: 26px;
+      height: 26px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0a0a0a;
+      flex-shrink: 0;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+    }
+
+    @media (min-width: 480px) { .user-email { display: block; } }
+
+    .btn-signout {
+      background: none;
+      border: none;
+      color: var(--muted-2);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.15s;
+    }
+
+    .btn-signout:hover { color: var(--text); }
+
+    /* ── Compose ──────────────────────────────────────────────── */
     .compose {
-      padding: 24px 0 20px;
+      padding: 26px 0 22px;
       border-bottom: 1px solid var(--border);
     }
 
-    textarea {
+    .compose-textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 1.65;
+      padding: 16px 18px;
       resize: none;
-      min-height: 96px;
-      margin-bottom: 10px;
+      min-height: 108px;
+      outline: none;
+      display: block;
+      transition: border-color 0.15s;
     }
+
+    .compose-textarea:focus { border-color: rgba(245, 158, 11, 0.3); }
+    .compose-textarea::placeholder { color: var(--muted); }
 
     .compose-footer {
       display: flex;
-      justify-content: flex-end;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
     }
 
-    .char-count {
-      font-size: 12px;
-      color: var(--muted);
-      align-self: center;
-      margin-right: auto;
+    .char-count { font-size: 12px; color: var(--muted); }
+
+    .btn-save {
+      background: var(--accent);
+      color: #0a0a0a;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 20px;
+      cursor: pointer;
+      letter-spacing: -0.1px;
+      transition: opacity 0.15s;
     }
 
-    /* ── Notes list ── */
+    .btn-save:hover:not(:disabled) { opacity: 0.85; }
+    .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Notes ────────────────────────────────────────────────── */
     .notes-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 0 12px;
+      padding: 22px 0 14px;
     }
 
-    .notes-header h2 {
-      font-size: 13px;
+    .notes-label {
+      font-size: 11px;
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.09em;
     }
 
-    .notes-count {
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .notes-count { font-size: 12px; color: var(--muted); }
 
     .notes-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding-bottom: 60px;
+      gap: 10px;
+      padding-bottom: 80px;
     }
 
+    /* Note card */
     .note-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 20px;
+      padding: 20px 22px;
       transition: border-color 0.15s;
     }
 
-    .note-card:hover { border-color: #3a3a3a; }
+    .note-card:hover { border-color: rgba(255, 255, 255, 0.12); }
 
     .note-content {
       font-size: 15px;
-      line-height: 1.65;
+      line-height: 1.7;
       color: var(--text);
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    .note-date {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 12px;
+    .note-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
     }
+
+    .note-date { font-size: 12px; color: var(--muted); }
+
+    .btn-summarize {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 3px 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.15s;
+    }
+
+    .btn-summarize:hover:not(:disabled) { color: var(--accent); }
+    .btn-summarize:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Inline AI summary */
+    .note-summary {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(245, 158, 11, 0.1);
+    }
+
+    .summary-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      opacity: 0.75;
+    }
+
+    .summary-text {
+      font-size: 14px;
+      color: var(--muted-2);
+      line-height: 1.65;
+    }
+
+    /* ── Utility ──────────────────────────────────────────────── */
+    .hidden { display: none !important; }
 
     .empty-state {
       text-align: center;
-      padding: 60px 0;
+      padding: 64px 0;
+      color: var(--muted);
+    }
+
+    .empty-icon { font-size: 30px; margin-bottom: 10px; }
+    .empty-text { font-size: 14px; line-height: 1.7; }
+
+    .loading-state {
+      text-align: center;
+      padding: 48px 0;
       color: var(--muted);
       font-size: 14px;
     }
 
-    .empty-state p:first-child {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
     .spinner {
       display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid var(--border);
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.07);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
@@ -273,71 +483,85 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .loading-notes {
-      text-align: center;
-      padding: 40px 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    @media (max-width: 480px) {
-      .auth-box { padding: 28px 20px; }
+    @media (max-width: 440px) {
+      .auth-card { padding: 36px 24px 32px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── Auth screen ── -->
+<!-- ── Auth screen ──────────────────────────────────────────────── -->
 <div id="auth-screen">
-  <div class="auth-box">
-    <div class="auth-logo">MyScout</div>
-    <div class="auth-tagline">Your personal knowledge base.</div>
+  <div class="auth-card">
 
-    <div class="field">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+    <div class="auth-brand">
+      <div class="auth-mark">M</div>
+      <span class="auth-brand-name">MyScout</span>
     </div>
 
-    <div class="field">
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    <h1 class="auth-heading" id="auth-heading">Welcome back.</h1>
+    <p  class="auth-sub"     id="auth-sub">Sign in to your account to continue.</p>
+
+    <div class="auth-field">
+      <label class="auth-label" for="email">Email address</label>
+      <input class="auth-input" type="email" id="email"
+             placeholder="you@example.com" autocomplete="email" />
     </div>
 
-    <div class="btn-row">
-      <button class="btn-primary" id="btn-login">Log in</button>
-      <button class="btn-ghost"   id="btn-signup">Sign up</button>
+    <div class="auth-field">
+      <label class="auth-label" for="password">Password</label>
+      <input class="auth-input" type="password" id="password"
+             placeholder="••••••••" autocomplete="current-password" />
     </div>
 
-    <div class="error-msg" id="auth-error"></div>
+    <button class="auth-btn" id="auth-btn">Sign in</button>
+
+    <div class="auth-msg error"   id="auth-error"></div>
+    <div class="auth-msg success" id="auth-success"></div>
+
+    <p class="auth-toggle">
+      <span id="toggle-label">Don't have an account?</span>
+      <button class="auth-toggle-link" id="toggle-btn" onclick="toggleAuthMode()">Sign up</button>
+    </p>
+
   </div>
 </div>
 
-<!-- ── App screen ── -->
+<!-- ── App screen ───────────────────────────────────────────────── -->
 <div id="app-screen">
   <div class="container">
 
     <header class="app-header">
-      <span class="app-logo">MyScout</span>
-      <button class="btn-ghost btn-sm" id="btn-logout">Log out</button>
+      <div class="app-logo">
+        <div class="app-mark">M</div>
+        MyScout
+      </div>
+      <div class="header-right">
+        <span class="user-email" id="user-email"></span>
+        <button class="btn-signout" id="btn-logout">Sign out</button>
+      </div>
     </header>
 
     <section class="compose">
-      <div class="field" style="margin-bottom:0">
-        <textarea id="note-input" placeholder="Save something interesting…" maxlength="10000"></textarea>
-      </div>
+      <textarea
+        class="compose-textarea"
+        id="note-input"
+        placeholder="Save something interesting…"
+        maxlength="10000"
+      ></textarea>
       <div class="compose-footer">
         <span class="char-count" id="char-count">0 / 10,000</span>
-        <button class="btn-primary btn-sm" id="btn-save">Save</button>
+        <button class="btn-save" id="btn-save">Save</button>
       </div>
     </section>
 
     <div class="notes-header">
-      <h2>Saved</h2>
+      <span class="notes-label">Saved</span>
       <span class="notes-count" id="notes-count"></span>
     </div>
 
     <div class="notes-list" id="notes-list">
-      <div class="loading-notes"><span class="spinner"></span> Loading…</div>
+      <div class="loading-state"><span class="spinner"></span> Loading…</div>
     </div>
 
   </div>
@@ -347,22 +571,26 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <script>
-  // ── Config ──────────────────────────────────────────────────────────────────
-  // Replace these two values with your project's URL and anon key.
-  // These are safe for frontend use — RLS policies protect all data.
-  const SUPABASE_URL  = 'https://krkuqtmttobswcnvjaqw.supabase.co';      // e.g. https://xxxx.supabase.co
-  const SUPABASE_ANON = 'sb_publishable_ZmLxtuwdlC0i03Hvu9Hh1Q_G-h4aq3i'; // from Project Settings → API
+  // ── Config ────────────────────────────────────────────────────────────────────
+  // Supabase project URL and anon key — both are public values, safe for frontend.
+  const SUPABASE_URL  = 'https://krkuqtmttobswcnvjaqw.supabase.co';
+  const SUPABASE_ANON = 'sb_publishable_ZmLxtuwdlC0i03Hvu9Hh1Q_G-h4aq3i';
 
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // ── DOM refs ─────────────────────────────────────────────────────────────────
+  // ── DOM refs ──────────────────────────────────────────────────────────────────
   const authScreen  = document.getElementById('auth-screen');
   const appScreen   = document.getElementById('app-screen');
   const emailInput  = document.getElementById('email');
   const passInput   = document.getElementById('password');
-  const btnLogin    = document.getElementById('btn-login');
-  const btnSignup   = document.getElementById('btn-signup');
+  const authBtn     = document.getElementById('auth-btn');
   const authError   = document.getElementById('auth-error');
+  const authSuccess = document.getElementById('auth-success');
+  const authHeading = document.getElementById('auth-heading');
+  const authSub     = document.getElementById('auth-sub');
+  const toggleLabel = document.getElementById('toggle-label');
+  const toggleBtn   = document.getElementById('toggle-btn');
+  const userEmailEl = document.getElementById('user-email');
   const btnLogout   = document.getElementById('btn-logout');
   const noteInput   = document.getElementById('note-input');
   const charCount   = document.getElementById('char-count');
@@ -370,42 +598,83 @@
   const notesList   = document.getElementById('notes-list');
   const notesCount  = document.getElementById('notes-count');
 
-  // ── UI helpers ───────────────────────────────────────────────────────────────
+  // ── Auth mode toggle ──────────────────────────────────────────────────────────
+  let authMode = 'login';
+
+  function toggleAuthMode() {
+    authMode = authMode === 'login' ? 'signup' : 'login';
+    clearAuthMsgs();
+    if (authMode === 'signup') {
+      authHeading.textContent = 'Create account.';
+      authSub.textContent     = 'Join MyScout to start saving.';
+      authBtn.textContent     = 'Create account';
+      toggleLabel.textContent = 'Already have an account?';
+      toggleBtn.textContent   = 'Sign in';
+      passInput.setAttribute('autocomplete', 'new-password');
+    } else {
+      authHeading.textContent = 'Welcome back.';
+      authSub.textContent     = 'Sign in to your account to continue.';
+      authBtn.textContent     = 'Sign in';
+      toggleLabel.textContent = "Don't have an account?";
+      toggleBtn.textContent   = 'Sign up';
+      passInput.setAttribute('autocomplete', 'current-password');
+    }
+  }
+
+  // ── UI helpers ────────────────────────────────────────────────────────────────
   function showAuth() {
     authScreen.style.display = 'flex';
     appScreen.style.display  = 'none';
   }
 
-  function showApp() {
+  function showApp(session) {
     authScreen.style.display = 'none';
     appScreen.style.display  = 'block';
+    if (session?.user?.email) userEmailEl.textContent = session.user.email;
     loadNotes();
   }
 
   function setAuthError(msg) {
-    authError.textContent    = msg;
-    authError.style.display  = msg ? 'block' : 'none';
+    authError.textContent     = msg;
+    authError.style.display   = msg ? 'block' : 'none';
+    authSuccess.style.display = 'none';
+  }
+
+  function setAuthSuccess(msg) {
+    authSuccess.textContent  = msg;
+    authSuccess.style.display = msg ? 'block' : 'none';
+    authError.style.display   = 'none';
+  }
+
+  function clearAuthMsgs() {
+    authError.style.display = authSuccess.style.display = 'none';
   }
 
   function setAuthBusy(busy) {
-    btnLogin.disabled  = busy;
-    btnSignup.disabled = busy;
-    emailInput.disabled = busy;
-    passInput.disabled  = busy;
+    authBtn.disabled = emailInput.disabled = passInput.disabled = busy;
+    authBtn.textContent = busy
+      ? (authMode === 'login' ? 'Signing in…' : 'Creating account…')
+      : (authMode === 'login' ? 'Sign in'     : 'Create account');
   }
 
   function setSaveBusy(busy) {
-    btnSave.disabled   = busy;
-    noteInput.disabled = busy;
+    btnSave.disabled = noteInput.disabled = busy;
     btnSave.textContent = busy ? 'Saving…' : 'Save';
   }
 
   function formatDate(iso) {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', {
+    return new Date(iso).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', year: 'numeric',
       hour: 'numeric', minute: '2-digit'
     });
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;');
   }
 
   function renderNotes(notes) {
@@ -416,72 +685,58 @@
     if (!notes.length) {
       notesList.innerHTML = `
         <div class="empty-state">
-          <p>📓</p>
-          <p>Nothing saved yet.<br>Write your first note above.</p>
+          <div class="empty-icon">📓</div>
+          <div class="empty-text">Nothing saved yet.<br>Write your first note above.</div>
         </div>`;
       return;
     }
 
     notesList.innerHTML = notes.map(n => `
-      <article class="note-card">
+      <article class="note-card" data-id="${n.id}">
         <div class="note-content">${escapeHtml(n.content)}</div>
-        <div class="note-date">${formatDate(n.created_at)}</div>
+        <div class="note-footer">
+          <span class="note-date">${formatDate(n.created_at)}</span>
+          <button class="btn-summarize" onclick="summarizeNote('${n.id}', this)">
+            ✦ Summarize
+          </button>
+        </div>
+        <div class="note-summary hidden" id="summary-${n.id}"></div>
       </article>
     `).join('');
   }
 
-  function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  // ── Auth ─────────────────────────────────────────────────────────────────────
-  async function handleLogin() {
+  // ── Auth ──────────────────────────────────────────────────────────────────────
+  async function handleAuth() {
     const email = emailInput.value.trim();
     const pass  = passInput.value;
     if (!email || !pass) { setAuthError('Email and password are required.'); return; }
+    if (authMode === 'signup' && pass.length < 6) {
+      setAuthError('Password must be at least 6 characters.');
+      return;
+    }
 
     setAuthBusy(true);
-    setAuthError('');
-    const { error } = await db.auth.signInWithPassword({ email, password: pass });
-    setAuthBusy(false);
-    if (error) setAuthError(error.message);
-  }
+    clearAuthMsgs();
 
-  async function handleSignup() {
-    const email = emailInput.value.trim();
-    const pass  = passInput.value;
-    if (!email || !pass) { setAuthError('Email and password are required.'); return; }
-    if (pass.length < 6)  { setAuthError('Password must be at least 6 characters.'); return; }
-
-    setAuthBusy(true);
-    setAuthError('');
-    const { error } = await db.auth.signUp({ email, password: pass });
-    setAuthBusy(false);
-    if (error) {
-      setAuthError(error.message);
+    if (authMode === 'login') {
+      const { error } = await db.auth.signInWithPassword({ email, password: pass });
+      setAuthBusy(false);
+      if (error) setAuthError(error.message);
     } else {
-      setAuthError('');
-      // Supabase may require email confirmation depending on project settings.
-      // If auto-confirm is on, onAuthStateChange fires immediately.
-      // If not, show a prompt.
-      const { data } = await db.auth.getSession();
-      if (!data.session) {
-        authError.style.display = 'block';
-        authError.style.color   = '#86efac';
-        authError.style.background = 'rgba(74,222,128,0.08)';
-        authError.style.border  = '1px solid rgba(74,222,128,0.25)';
-        authError.textContent   = 'Check your email to confirm your account.';
+      const { error } = await db.auth.signUp({ email, password: pass });
+      setAuthBusy(false);
+      if (error) {
+        setAuthError(error.message);
+      } else {
+        const { data } = await db.auth.getSession();
+        if (!data.session) setAuthSuccess('Check your email to confirm your account.');
       }
     }
   }
 
   // ── Notes ─────────────────────────────────────────────────────────────────────
   async function loadNotes() {
-    notesList.innerHTML = '<div class="loading-notes"><span class="spinner"></span> Loading…</div>';
+    notesList.innerHTML = '<div class="loading-state"><span class="spinner"></span> Loading…</div>';
 
     const { data, error } = await db
       .from('notes')
@@ -489,7 +744,7 @@
       .order('created_at', { ascending: false });
 
     if (error) {
-      notesList.innerHTML = `<div class="empty-state"><p style="color:var(--muted);font-size:14px">Failed to load notes.</p></div>`;
+      notesList.innerHTML = '<div class="empty-state"><div class="empty-text" style="color:var(--muted)">Failed to load notes.</div></div>';
       return;
     }
     renderNotes(data);
@@ -502,29 +757,69 @@
     setSaveBusy(true);
     const { data: { session } } = await db.auth.getSession();
 
-    const { error } = await db.from('notes').insert({
-      user_id: session.user.id,
-      content
-    });
-
+    const { error } = await db.from('notes').insert({ user_id: session.user.id, content });
     setSaveBusy(false);
-    if (error) {
-      alert('Failed to save note. Please try again.');
-      return;
-    }
 
-    noteInput.value = '';
+    if (error) { alert('Failed to save note. Please try again.'); return; }
+
+    noteInput.value       = '';
     charCount.textContent = '0 / 10,000';
     loadNotes();
   }
 
-  // ── Event listeners ───────────────────────────────────────────────────────────
-  btnLogin.addEventListener('click', handleLogin);
-  btnSignup.addEventListener('click', handleSignup);
+  // ── Summarize ─────────────────────────────────────────────────────────────────
+  async function summarizeNote(noteId, btn) {
+    const card      = btn.closest('.note-card');
+    const content   = card.querySelector('.note-content').textContent;
+    const summaryEl = document.getElementById(`summary-${noteId}`);
 
-  btnLogout.addEventListener('click', async () => {
-    await db.auth.signOut();
+    btn.disabled    = true;
+    btn.textContent = '✦ Thinking…';
+
+    const { data: { session } } = await db.auth.getSession();
+
+    let res;
+    try {
+      res = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ content })
+      });
+    } catch {
+      btn.disabled    = false;
+      btn.textContent = '✦ Summarize';
+      alert('Network error. Please try again.');
+      return;
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      btn.disabled    = false;
+      btn.textContent = '✦ Summarize';
+      alert(data.error || 'Failed to summarize.');
+      return;
+    }
+
+    summaryEl.innerHTML = `
+      <div class="summary-label">AI Summary</div>
+      <div class="summary-text">${escapeHtml(data.summary)}</div>
+    `;
+    summaryEl.classList.remove('hidden');
+    btn.style.display = 'none';
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────────
+  authBtn.addEventListener('click', handleAuth);
+
+  passInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleAuth();
   });
+
+  btnLogout.addEventListener('click', () => db.auth.signOut());
 
   btnSave.addEventListener('click', saveNote);
 
@@ -536,22 +831,13 @@
     charCount.textContent = `${noteInput.value.length.toLocaleString()} / 10,000`;
   });
 
-  passInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleLogin();
-  });
-
   // ── Auth state ────────────────────────────────────────────────────────────────
   db.auth.onAuthStateChange((_event, session) => {
-    if (session) {
-      showApp();
-    } else {
-      showAuth();
-    }
+    if (session) showApp(session); else showAuth();
   });
 
-  // Initial session check
   db.auth.getSession().then(({ data: { session } }) => {
-    if (session) showApp(); else showAuth();
+    if (session) showApp(session); else showAuth();
   });
 </script>
 </body>
