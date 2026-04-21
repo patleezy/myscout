@@ -1,9 +1,54 @@
+function extractUrl(text) {
+  const match = text.match(/https?:\/\/[^\s]+/);
+  return match ? match[0].replace(/[.,;!?)]+$/, '') : null;
+}
+
+async function fetchArticleText(url) {
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent':      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Cache-Control':   'no-cache'
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(8000)
+  });
+
+  if (!res.ok) return null;
+
+  const html = await res.text();
+
+  // Strip noisy blocks first, then all tags
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  // If we got back mostly boilerplate or very little content, treat as failure
+  if (text.length < 200) return null;
+
+  // Cap at ~6000 chars to stay well within Claude's context for this task
+  return text.slice(0, 6000);
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify Supabase session
   const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -17,7 +62,7 @@ module.exports = async function handler(req, res) {
   if (!authRes.ok) return res.status(401).json({ error: 'Unauthorized' });
   const user = await authRes.json();
 
-  // Rate limit: 20 summarizes per user per day via Upstash
+  // Rate limit: 20 summarizes per user per day
   const today = new Date().toISOString().slice(0, 10);
   const key   = `summarize:${user.id}:${today}`;
 
@@ -27,22 +72,29 @@ module.exports = async function handler(req, res) {
   const { result: count } = await incrRes.json();
 
   if (count === 1) {
-    // Set TTL of 25 hours on first use so the key always expires
     fetch(`${process.env.UPSTASH_REDIS_REST_URL}/expire/${key}/90000`, {
       headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
     });
   }
 
   if (count > 20) {
-    return res.status(429).json({
-      error: 'Daily limit reached (20 summaries/day). Try again tomorrow.'
-    });
+    return res.status(429).json({ error: 'Daily limit reached (20 summaries/day). Try again tomorrow.' });
   }
 
   const { content } = req.body;
   if (!content?.trim()) return res.status(400).json({ error: 'No content provided' });
 
-  // Call Anthropic
+  // Try to fetch article content if note contains a URL
+  const url         = extractUrl(content);
+  let articleText   = null;
+  if (url) {
+    try { articleText = await fetchArticleText(url); } catch { /* fall through */ }
+  }
+
+  const prompt = articleText
+    ? `Summarize this article in 2–3 sentences. Be specific about the key argument and main insights — no filler.\n\nURL: ${url}\n\n${articleText}`
+    : `Summarize this saved note in 1–2 sentences. Be direct and specific.\n\n${content}`;
+
   const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -53,10 +105,7 @@ module.exports = async function handler(req, res) {
     body: JSON.stringify({
       model:      'claude-sonnet-4-6',
       max_tokens: 200,
-      messages: [{
-        role:    'user',
-        content: `Summarize the following saved note in 1–2 concise sentences. The note may contain URLs — treat them as references, not as pages to visit. Summarize only what is written in the note itself.\n\n${content}`
-      }]
+      messages: [{ role: 'user', content: prompt }]
     })
   });
 
@@ -67,5 +116,8 @@ module.exports = async function handler(req, res) {
   }
 
   const aiData = await aiRes.json();
-  return res.status(200).json({ summary: aiData.content[0].text });
+  return res.status(200).json({
+    summary: aiData.content[0].text,
+    source:  articleText ? 'article' : 'note'
+  });
 };
