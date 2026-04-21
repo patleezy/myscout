@@ -427,6 +427,20 @@
     .btn-summarize:hover:not(:disabled) { color: var(--accent); }
     .btn-summarize:disabled { opacity: 0.45; cursor: not-allowed; }
 
+    .btn-delete {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 3px 0 3px 10px;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+
+    .btn-delete:hover { color: #ef4444; }
+
     /* Inline AI summary */
     .note-summary {
       margin-top: 16px;
@@ -830,9 +844,10 @@
         ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
         <div class="note-footer">
           <span class="note-date">${formatDate(n.created_at)}</span>
-          <button class="btn-summarize" onclick="summarizeNote('${n.id}', this)">
-            ✦ Summarize
-          </button>
+          <div style="display:flex;align-items:center">
+            <button class="btn-summarize" onclick="summarizeNote('${n.id}', this)">✦ Summarize</button>
+            <button class="btn-delete" onclick="deleteNote('${n.id}', this)" title="Delete">✕</button>
+          </div>
         </div>
         <div class="note-summary hidden" id="summary-${n.id}"></div>
       </article>`;
@@ -974,6 +989,23 @@
         body: JSON.stringify({ noteId, content })
       });
     } catch { /* silent fail — tags just won't appear */ }
+  }
+
+  // ── Delete ───────────────────────────────────────────────────────────────────
+  async function deleteNote(noteId, btn) {
+    btn.disabled = true;
+    const { error } = await db.from('notes').delete().eq('id', noteId);
+    if (error) { btn.disabled = false; alert('Failed to delete. Try again.'); return; }
+    allNotes = allNotes.filter(n => n.id !== noteId);
+    if (activeTag) {
+      renderNotes(allNotes.filter(n => n.tags?.includes(activeTag)));
+    } else if (searchInput.value.trim()) {
+      btn.closest('.note-card').remove();
+    } else {
+      renderNotes(allNotes);
+    }
+    notesCount.textContent = allNotes.length
+      ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
   }
 
   // ── Search ────────────────────────────────────────────────────────────────────

@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
       max_tokens: 200,
       messages: [{
         role:    'user',
-        content: `Summarize the following note in 1–2 concise sentences. Be direct and specific — no filler phrases.\n\n${content}`
+        content: `Summarize the following saved note in 1–2 concise sentences. The note may contain URLs — treat them as references, not as pages to visit. Summarize only what is written in the note itself.\n\n${content}`
       }]
     })
   });
