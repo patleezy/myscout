@@ -676,6 +676,48 @@
 
     .tag-filter-chip:hover { opacity: 0.75; }
 
+    /* ── Auth feature bullets ────────────────────────────────────── */
+    .auth-features {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 26px;
+    }
+
+    .auth-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted-2);
+      line-height: 1.4;
+    }
+
+    .auth-feature-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      opacity: 0.65;
+    }
+
+    /* ── Auth input icon wrapper ─────────────────────────────────── */
+    .auth-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .auth-input-icon {
+      position: absolute;
+      left: 13px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .auth-input-wrap .auth-input { padding-left: 36px; }
+
     @media (max-width: 440px) {
       .auth-card { padding: 36px 24px 32px; }
     }
@@ -698,19 +740,37 @@
       <span class="auth-brand-name">MyScout</span>
     </div>
 
+    <div class="auth-features">
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Save links, notes, and ideas in seconds</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Search by meaning, not just keywords</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Auto-tagged and AI-summarized</div>
+    </div>
+
     <h1 class="auth-heading" id="auth-heading">Welcome back.</h1>
     <p  class="auth-sub"     id="auth-sub">Sign in to your account to continue.</p>
 
     <div class="auth-field">
-      <label class="auth-label" for="email">Email address</label>
-      <input class="auth-input" type="email" id="email"
-             placeholder="you@example.com" autocomplete="email" />
+      <label class="auth-label" for="email">Email</label>
+      <div class="auth-input-wrap">
+        <svg class="auth-input-icon" width="14" height="11" viewBox="0 0 14 11" fill="none">
+          <rect x="0.65" y="0.65" width="12.7" height="9.7" rx="1.35" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M1 1.5L7 6.5L13 1.5" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        <input class="auth-input" type="email" id="email"
+               placeholder="you@example.com" autocomplete="email" />
+      </div>
     </div>
 
     <div class="auth-field">
       <label class="auth-label" for="password">Password</label>
-      <input class="auth-input" type="password" id="password"
-             placeholder="••••••••" autocomplete="current-password" />
+      <div class="auth-input-wrap">
+        <svg class="auth-input-icon" width="11" height="14" viewBox="0 0 11 14" fill="none">
+          <rect x="0.65" y="5.65" width="9.7" height="7.7" rx="1.35" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2.5 5.5V3.5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input class="auth-input" type="password" id="password"
+               placeholder="••••••••" autocomplete="current-password" />
+      </div>
     </div>
 
     <button class="auth-btn" id="auth-btn">Sign in</button>
