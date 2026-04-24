@@ -718,6 +718,132 @@
 
     .auth-input-wrap .auth-input { padding-left: 36px; }
 
+    /* ── Blockquote ──────────────────────────────────────────────── */
+    .note-content blockquote {
+      border-left: 3px solid rgba(245,158,11,0.5);
+      margin: 6px 0;
+      padding: 4px 0 4px 14px;
+      font-style: italic;
+      color: var(--muted-2);
+    }
+
+    /* ── Similar notes ───────────────────────────────────────────── */
+    .note-similar { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .similar-label { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+    .similar-item { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+    .similar-item:hover { border-color: rgba(255,255,255,0.12); }
+    .similar-item-title { font-size: 12px; font-weight: 500; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .similar-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .similar-item-tag { font-size: 10px; color: var(--muted); border: 1px solid rgba(245,158,11,0.12); border-radius: 20px; padding: 1px 7px; }
+
+    /* ── Compose tabs + highlight ────────────────────────────────── */
+    .compose-tabs { display: flex; gap: 2px; margin-bottom: 10px; }
+    .compose-tab { background: none; border: none; color: var(--muted-2); font-family: inherit; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 6px; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+    .compose-tab:hover { color: var(--text); }
+    .compose-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .highlight-url-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      border-bottom: none;
+      display: block;
+    }
+    .highlight-url-input:focus { border-color: rgba(245,158,11,0.3); }
+    .highlight-url-input::placeholder { color: var(--muted); }
+
+    .highlight-quote-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 10px 14px;
+      resize: none;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.15s;
+      display: block;
+    }
+    .highlight-quote-input:focus { border-color: rgba(245,158,11,0.3); }
+    .highlight-quote-input::placeholder { color: var(--muted); }
+
+    /* ── Chat ────────────────────────────────────────────────────── */
+    .btn-chat {
+      background: none;
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-chat:hover { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.4); }
+
+    .chat-panel { border-bottom: 1px solid var(--border); padding: 18px 0; display: none; }
+    .chat-panel.open { display: block; }
+    .chat-row { display: flex; gap: 8px; }
+
+    .chat-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .chat-input:focus { border-color: rgba(245,158,11,0.3); }
+    .chat-input::placeholder { color: var(--muted); }
+
+    .btn-ask {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 18px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-ask:hover:not(:disabled) { opacity: 0.85; }
+    .btn-ask:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .chat-response { margin-top: 14px; font-size: 14px; line-height: 1.7; color: var(--text); }
+    .chat-sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .chat-source-chip {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.15);
+      border-radius: 20px;
+      color: var(--muted-2);
+      font-family: inherit;
+      font-size: 11px;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .chat-source-chip:hover { color: var(--accent); }
+
     @media (max-width: 440px) {
       .auth-card { padding: 36px 24px 32px; }
     }
@@ -741,9 +867,9 @@
     </div>
 
     <div class="auth-features">
-      <div class="auth-feature"><span class="auth-feature-dot"></span>Save links, notes, and ideas in seconds</div>
-      <div class="auth-feature"><span class="auth-feature-dot"></span>Search by meaning, not just keywords</div>
-      <div class="auth-feature"><span class="auth-feature-dot"></span>Auto-tagged and AI-summarized</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Save links, notes, and highlights in seconds</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Search by meaning or chat with your collection</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Auto-tagged, summarized, and AI-connected</div>
     </div>
 
     <h1 class="auth-heading" id="auth-heading">Welcome back.</h1>
@@ -790,6 +916,15 @@
 <div id="app-screen">
   <div class="container">
 
+    <div id="chat-panel" class="chat-panel">
+      <div class="chat-row">
+        <input class="chat-input" id="chat-input" type="text"
+               placeholder="Ask a question about your notes…" autocomplete="off" />
+        <button class="btn-ask" id="btn-ask" onclick="askNotes()">Ask</button>
+      </div>
+      <div class="chat-response hidden" id="chat-response"></div>
+    </div>
+
     <header class="app-header">
       <div class="app-logo">
         <div class="app-mark">M</div>
@@ -797,6 +932,7 @@
       </div>
       <div class="header-right">
         <span class="user-email" id="user-email"></span>
+        <button class="btn-chat" id="btn-chat" onclick="toggleChatPanel()">✦ Chat</button>
         <button class="btn-signout" id="btn-logout">Sign out</button>
       </div>
     </header>
@@ -814,22 +950,38 @@
     </div>
 
     <section class="compose">
-      <div class="compose-editor">
-        <div class="toolbar" id="toolbar">
-          <button class="toolbar-btn" onclick="wrapSel('**','**')" title="Bold (⌘B)"><b>B</b></button>
-          <button class="toolbar-btn" onclick="wrapSel('*','*')" title="Italic (⌘I)"><i>I</i></button>
-          <button class="toolbar-btn" onclick="wrapSel('~~','~~')" title="Strikethrough"><s>S</s></button>
-          <span class="toolbar-sep"></span>
-          <button class="toolbar-btn" onclick="insertList('- ')" title="Bullet list">• List</button>
-          <button class="toolbar-btn" onclick="insertList('1. ')" title="Numbered list">1. List</button>
-        </div>
-        <textarea
-          class="compose-textarea"
-          id="note-input"
-          placeholder="Save something interesting…"
-          maxlength="10000"
-        ></textarea>
+      <div class="compose-tabs">
+        <button class="compose-tab active" id="tab-note"      onclick="switchComposeMode('note')">Note</button>
+        <button class="compose-tab"        id="tab-highlight" onclick="switchComposeMode('highlight')">Highlight</button>
       </div>
+
+      <div id="note-fields">
+        <div class="compose-editor">
+          <div class="toolbar" id="toolbar">
+            <button class="toolbar-btn" onclick="wrapSel('**','**')" title="Bold (⌘B)"><b>B</b></button>
+            <button class="toolbar-btn" onclick="wrapSel('*','*')" title="Italic (⌘I)"><i>I</i></button>
+            <button class="toolbar-btn" onclick="wrapSel('~~','~~')" title="Strikethrough"><s>S</s></button>
+            <span class="toolbar-sep"></span>
+            <button class="toolbar-btn" onclick="insertPrefix('- ')" title="Bullet list">• List</button>
+            <button class="toolbar-btn" onclick="insertPrefix('1. ')" title="Numbered list">1. List</button>
+            <button class="toolbar-btn" onclick="insertPrefix('> ')" title="Blockquote">&gt; Quote</button>
+          </div>
+          <textarea
+            class="compose-textarea"
+            id="note-input"
+            placeholder="Save something interesting…"
+            maxlength="10000"
+          ></textarea>
+        </div>
+      </div>
+
+      <div id="highlight-fields" class="hidden">
+        <input    class="highlight-url-input"   id="highlight-url"   type="url"
+                  placeholder="Article or page URL…" />
+        <textarea class="highlight-quote-input" id="highlight-quote" rows="3"
+                  placeholder="Paste the quote you want to save…"></textarea>
+      </div>
+
       <div class="compose-footer">
         <span class="char-count" id="char-count">0 / 10,000</span>
         <button class="btn-save" id="btn-save">Save</button>
@@ -1014,10 +1166,12 @@
           <span class="note-date">${formatDate(n.created_at)}</span>
           <div style="display:flex;align-items:center">
             <button class="btn-summarize" onclick="summarizeNote('${n.id}', this)">✦ Summarize</button>
+            <button class="btn-summarize" onclick="showSimilar('${n.id}', this)" style="margin-left:6px">~ Similar</button>
             <button class="btn-delete" onclick="deleteNote('${n.id}', this)" title="Delete">✕</button>
           </div>
         </div>
         <div class="note-summary hidden" id="summary-${n.id}"></div>
+        <div class="note-similar hidden" id="similar-${n.id}"></div>
       </article>`;
     }).join('');
   }
@@ -1070,9 +1224,28 @@
     renderNotes(activeTag ? allNotes.filter(n => n.tags?.includes(activeTag)) : allNotes);
   }
 
+  let composeMode = 'note';
+
+  function switchComposeMode(mode) {
+    composeMode = mode;
+    document.getElementById('note-fields').classList.toggle('hidden', mode !== 'note');
+    document.getElementById('highlight-fields').classList.toggle('hidden', mode !== 'highlight');
+    document.getElementById('tab-note').classList.toggle('active', mode === 'note');
+    document.getElementById('tab-highlight').classList.toggle('active', mode === 'highlight');
+  }
+
   async function saveNote() {
-    const content = noteInput.value.trim();
-    if (!content) return;
+    let content;
+    if (composeMode === 'highlight') {
+      const url   = document.getElementById('highlight-url').value.trim();
+      const quote = document.getElementById('highlight-quote').value.trim();
+      if (!url)   { alert('Please enter a URL for the highlight.'); return; }
+      if (!quote) { alert('Please enter the quote text.'); return; }
+      content = `${url}\n\n> ${quote}`;
+    } else {
+      content = noteInput.value.trim();
+      if (!content) return;
+    }
 
     setSaveBusy(true);
     const { data: { session } } = await db.auth.getSession();
@@ -1086,14 +1259,18 @@
     setSaveBusy(false);
     if (error) { alert('Failed to save note. Please try again.'); return; }
 
-    noteInput.value       = '';
-    charCount.textContent = '0 / 10,000';
-    recentlySavedId       = inserted.id;
+    if (composeMode === 'highlight') {
+      document.getElementById('highlight-url').value   = '';
+      document.getElementById('highlight-quote').value = '';
+    } else {
+      noteInput.value       = '';
+      charCount.textContent = '0 / 10,000';
+    }
+    recentlySavedId = inserted.id;
     clearSearch();
     activeTag = null;
     await loadNotes();
 
-    // Generate embedding + tags in the background; reload when done
     embedNote(inserted.id, content, session.access_token).then(() => {
       recentlySavedId = null;
       loadNotes();
@@ -1248,6 +1425,94 @@
     renderNotes(allNotes);
   }
 
+  // ── Similar notes ────────────────────────────────────────────────────────────
+  async function showSimilar(noteId, btn) {
+    const similarEl = document.getElementById(`similar-${noteId}`);
+    if (!similarEl.classList.contains('hidden')) {
+      similarEl.classList.add('hidden');
+      btn.textContent = '~ Similar';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '~ Loading…';
+    const { data, error } = await db.rpc('similar_notes', {
+      p_note_id: noteId, p_threshold: 0.3, p_count: 3
+    });
+    btn.disabled = false;
+    btn.textContent = '~ Similar';
+    if (error) { alert('Failed to load similar notes.'); return; }
+    if (!data || !data.length) {
+      similarEl.innerHTML = `<div class="similar-label">Similar</div><div style="font-size:12px;color:var(--muted)">No similar notes found yet.</div>`;
+      similarEl.classList.remove('hidden');
+      return;
+    }
+    const itemsHtml = data.map(n => {
+      const title   = n.og_title || n.content.slice(0, 80) + (n.content.length > 80 ? '…' : '');
+      const tagsHtml = Array.isArray(n.tags) && n.tags.length
+        ? n.tags.map(t => `<span class="similar-item-tag">${escapeHtml(t)}</span>`).join('') : '';
+      return `<div class="similar-item" onclick="scrollToNote('${n.id}')">
+        <div class="similar-item-title">${escapeHtml(title)}</div>
+        ${tagsHtml ? `<div class="similar-item-tags">${tagsHtml}</div>` : ''}
+      </div>`;
+    }).join('');
+    similarEl.innerHTML = `<div class="similar-label">Similar</div>${itemsHtml}`;
+    similarEl.classList.remove('hidden');
+  }
+
+  function scrollToNote(noteId) {
+    document.querySelector(`.note-card[data-id="${noteId}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ── Chat ─────────────────────────────────────────────────────────────────────
+  let chatPanelOpen = false;
+
+  function toggleChatPanel() {
+    chatPanelOpen = !chatPanelOpen;
+    document.getElementById('chat-panel').classList.toggle('open', chatPanelOpen);
+    if (chatPanelOpen) document.getElementById('chat-input').focus();
+  }
+
+  async function askNotes() {
+    const question = document.getElementById('chat-input').value.trim();
+    if (!question) return;
+    const btnAsk     = document.getElementById('btn-ask');
+    const responseEl = document.getElementById('chat-response');
+    btnAsk.disabled    = true;
+    btnAsk.textContent = 'Thinking…';
+    responseEl.classList.remove('hidden');
+    responseEl.innerHTML = '<span class="spinner"></span> Searching notes…';
+    const { data: { session } } = await db.auth.getSession();
+    let res;
+    try {
+      res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ question })
+      });
+    } catch {
+      btnAsk.disabled = false;
+      btnAsk.textContent = 'Ask';
+      responseEl.innerHTML = '<span style="color:var(--muted)">Network error. Please try again.</span>';
+      return;
+    }
+    btnAsk.disabled = false;
+    btnAsk.textContent = 'Ask';
+    const data = await res.json();
+    if (!res.ok) {
+      responseEl.innerHTML = `<span style="color:var(--muted)">${escapeHtml(data.error || 'Failed to get answer.')}</span>`;
+      return;
+    }
+    const chipsHtml = data.noteIds.map(id => {
+      const note  = allNotes.find(n => n.id === id);
+      const label = note?.og_title || note?.content?.slice(0, 40) || id.slice(0, 8);
+      return `<button class="chat-source-chip" onclick="scrollToNote('${id}')">${escapeHtml(label)}</button>`;
+    }).join('');
+    responseEl.innerHTML = `
+      <div style="line-height:1.7">${renderMarkdown(data.answer)}</div>
+      ${chipsHtml ? `<div class="chat-sources">${chipsHtml}</div>` : ''}`;
+  }
+
   // ── Text helpers ─────────────────────────────────────────────────────────────
   function extractUrl(text) {
     const m = text.match(/https?:\/\/[^\s]+/);
@@ -1269,7 +1534,8 @@
     return linkifyAndEscape(raw)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g,     '<em>$1</em>')
-      .replace(/~~(.+?)~~/g,     '<del>$1</del>');
+      .replace(/~~(.+?)~~/g,     '<del>$1</del>')
+      .replace(/^&gt; (.+)$/gm,  '<blockquote>$1</blockquote>');
   }
 
   function wrapSel(before, after) {
@@ -1282,14 +1548,14 @@
     el.focus(); el.dispatchEvent(new Event('input'));
   }
 
-  function insertList(prefix) {
+  function insertPrefix(prefix) {
     const el = noteInput;
     const start = el.selectionStart, val = el.value;
     const lineStart = val.lastIndexOf('\n', start - 1) + 1;
     const lineEnd = val.indexOf('\n', start);
     const end = lineEnd === -1 ? val.length : lineEnd;
     const line = val.slice(lineStart, end);
-    const stripped = line.replace(/^- |^\d+\. /, '');
+    const stripped = line.replace(/^- |^\d+\. |^> /, '');
     if (line.startsWith(prefix)) {
       el.setRangeText(stripped, lineStart, end, 'end');
     } else {
@@ -1329,6 +1595,10 @@
 
   searchInput.addEventListener('keydown', e => {
     if (e.key === 'Escape') clearSearch();
+  });
+
+  document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') askNotes();
   });
 
   // ── Auth state ────────────────────────────────────────────────────────────────

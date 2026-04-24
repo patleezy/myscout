@@ -3,6 +3,32 @@ function extractUrl(text) {
   return match ? match[0].replace(/[.,;!?)]+$/, '') : null;
 }
 
+function isYouTubeUrl(url) {
+  return /youtube\.com\/watch|youtu\.be\//.test(url);
+}
+
+async function fetchYoutubeSummary(url) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [
+          { fileData: { mimeType: 'video/*', fileUri: url } },
+          { text: 'Summarize this YouTube video in 2–3 sentences. Be specific about the main topic and key insights — no filler.' }
+        ]}]
+      }),
+      signal: AbortSignal.timeout(20000)
+    }
+  );
+  if (!res.ok) throw new Error(`Gemini ${res.status}`);
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Empty Gemini response');
+  return text;
+}
+
 async function fetchArticleText(url) {
   const res = await fetch(url, {
     headers: {
@@ -84,9 +110,21 @@ module.exports = async function handler(req, res) {
   const { content } = req.body;
   if (!content?.trim()) return res.status(400).json({ error: 'No content provided' });
 
-  // Try to fetch article content if note contains a URL
-  const url         = extractUrl(content);
-  let articleText   = null;
+  const url = extractUrl(content);
+
+  // YouTube path: Gemini handles video natively
+  if (url && isYouTubeUrl(url)) {
+    try {
+      const summary = await fetchYoutubeSummary(url);
+      return res.status(200).json({ summary, source: 'youtube' });
+    } catch (e) {
+      console.error('Gemini error:', e);
+      return res.status(500).json({ error: 'Failed to generate YouTube summary' });
+    }
+  }
+
+  // Non-YouTube path: fetch article text → Claude Sonnet
+  let articleText = null;
   if (url) {
     try { articleText = await fetchArticleText(url); } catch { /* fall through */ }
   }
