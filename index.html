@@ -727,27 +727,6 @@
     .btn-favorites:hover { border-color: var(--accent); color: var(--accent); }
     .btn-favorites.active { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: var(--accent); }
 
-    /* ── Live preview ────────────────────────────────────────────── */
-    .note-preview {
-      margin-top: 8px;
-      padding: 12px 14px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 14px;
-      line-height: 1.7;
-      color: var(--text);
-      white-space: pre-line;
-      word-break: break-word;
-    }
-    .note-preview a { color: var(--accent); text-decoration: none; }
-    .note-preview a:hover { text-decoration: underline; }
-    .note-preview strong { font-weight: 700; }
-    .note-preview em { font-style: italic; }
-    .note-preview del { text-decoration: line-through; opacity: 0.65; }
-    .note-preview blockquote { border-left: 3px solid rgba(245,158,11,0.5); margin: 6px 0; padding: 4px 0 4px 14px; font-style: italic; color: var(--muted-2); }
-    .note-preview .note-indent { display: block; padding-left: 1.5em; }
-
     /* ── Blockquote ──────────────────────────────────────────────── */
     .note-content blockquote {
       border-left: 3px solid rgba(245,158,11,0.5);
@@ -828,6 +807,8 @@
 
     .chat-panel { border-bottom: 1px solid var(--border); padding: 18px 0; display: none; }
     .chat-panel.open { display: block; }
+    .chat-guide { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+    .chat-guide strong { color: var(--muted-2); font-weight: 600; }
     .chat-row { display: flex; gap: 8px; }
 
     .chat-input {
@@ -900,9 +881,10 @@
     </div>
 
     <div class="auth-features">
-      <div class="auth-feature"><span class="auth-feature-dot"></span>Save links, notes, and highlights in seconds</div>
-      <div class="auth-feature"><span class="auth-feature-dot"></span>Search by meaning or chat with your collection</div>
-      <div class="auth-feature"><span class="auth-feature-dot"></span>Auto-tagged, summarized, and AI-connected</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Save notes, links, highlights &amp; YouTube videos</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Search by meaning — finds what you meant, not just what you typed</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>AI summaries, auto-tags, and similar-note discovery</div>
+      <div class="auth-feature"><span class="auth-feature-dot"></span>Chat with your collection to surface ideas and connections</div>
     </div>
 
     <h1 class="auth-heading" id="auth-heading">Welcome back.</h1>
@@ -950,6 +932,10 @@
   <div class="container">
 
     <div id="chat-panel" class="chat-panel">
+      <div class="chat-guide">
+        <strong>Chat with your notes.</strong> Ask questions and MyScout answers using your saved content.
+        Try: <em>"What did I save about design?"</em> · <em>"Summarize my AI notes"</em> · <em>"What are the key ideas from the Kerr article?"</em>
+      </div>
       <div class="chat-row">
         <input class="chat-input" id="chat-input" type="text"
                placeholder="Ask a question about your notes…" autocomplete="off" />
@@ -1008,7 +994,6 @@
             maxlength="10000"
           ></textarea>
         </div>
-        <div id="note-preview" class="note-preview hidden"></div>
       </div>
 
       <div id="highlight-fields" class="hidden">
@@ -1367,9 +1352,11 @@
     summaryEl.classList.remove('hidden');
     btn.style.display = 'none';
     // Persist so it shows on next load without re-tapping
-    db.from('notes').update({ summary: data.summary }).eq('id', noteId);
-    const cached = allNotes.find(n => n.id === noteId);
-    if (cached) cached.summary = data.summary;
+    const { error: saveErr } = await db.from('notes').update({ summary: data.summary }).eq('id', noteId);
+    if (!saveErr) {
+      const cached = allNotes.find(n => n.id === noteId);
+      if (cached) cached.summary = data.summary;
+    }
   }
 
   // ── Embed (background) ───────────────────────────────────────────────────────
@@ -1683,14 +1670,6 @@
 
   noteInput.addEventListener('input', () => {
     charCount.textContent = `${noteInput.value.length.toLocaleString()} / 10,000`;
-    const preview = document.getElementById('note-preview');
-    const val = noteInput.value.trim();
-    if (val) {
-      preview.innerHTML = renderMarkdown(val);
-      preview.classList.remove('hidden');
-    } else {
-      preview.classList.add('hidden');
-    }
   });
 
   searchInput.addEventListener('input', () => {

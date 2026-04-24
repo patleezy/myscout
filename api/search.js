@@ -17,46 +17,58 @@ module.exports = async function handler(req, res) {
   const { query } = req.body;
   if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
 
-  // Embed the search query
-  const voyageRes = await fetch('https://api.voyageai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${process.env.VOYAGE_API_KEY}`
-    },
-    body: JSON.stringify({ model: 'voyage-3-lite', input: [query] })
-  });
+  const q = query.trim();
+  // Strip PostgREST wildcard/grouping chars so they can't break the filter syntax
+  const safeQ = encodeURIComponent(q.replace(/[*()]/g, ''));
 
-  if (!voyageRes.ok) {
-    const err = await voyageRes.text();
-    console.error('Voyage error:', err);
-    return res.status(500).json({ error: 'Failed to process search query' });
-  }
+  // Text search and embedding run in parallel — text doesn't need the embedding
+  const textUrl = `${process.env.SUPABASE_URL}/rest/v1/notes`
+    + `?or=(content.ilike.*${safeQ}*,og_title.ilike.*${safeQ}*)`
+    + `&select=id,content,tags,og_image,og_title,summary,is_favorite,created_at`
+    + `&order=created_at.desc`;
 
-  const voyageData    = await voyageRes.json();
-  const queryEmbedding = voyageData.data[0].embedding;
-
-  // Vector similarity search via Supabase RPC (RLS enforced by caller JWT)
-  const searchRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/search_notes`, {
-    method: 'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${token}`,
-      'apikey':        process.env.SUPABASE_ANON_KEY
-    },
-    body: JSON.stringify({
-      query_embedding: queryEmbedding,
-      match_threshold: 0.25,
-      match_count:     10
+  const [voyageSettled, textSettled] = await Promise.allSettled([
+    fetch('https://api.voyageai.com/v1/embeddings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.VOYAGE_API_KEY}` },
+      body: JSON.stringify({ model: 'voyage-3-lite', input: [q] })
+    }),
+    fetch(textUrl, {
+      headers: { 'Authorization': `Bearer ${token}`, 'apikey': process.env.SUPABASE_ANON_KEY }
     })
-  });
+  ]);
 
-  if (!searchRes.ok) {
-    const err = await searchRes.text();
-    console.error('Supabase search error:', err);
-    return res.status(500).json({ error: 'Search failed' });
+  // Collect text results
+  let textResults = [];
+  if (textSettled.status === 'fulfilled' && textSettled.value.ok) {
+    try { textResults = await textSettled.value.json(); } catch { /* ignore */ }
   }
 
-  const results = await searchRes.json();
-  return res.status(200).json({ results });
+  // Vector search (only if embedding succeeded)
+  let vectorResults = [];
+  if (voyageSettled.status === 'fulfilled' && voyageSettled.value.ok) {
+    try {
+      const voyageData = await voyageSettled.value.json();
+      const embedding  = voyageData.data[0].embedding;
+
+      const vectorRes = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/search_notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+          'apikey':        process.env.SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ query_embedding: embedding, match_threshold: 0.25, match_count: 10 })
+      });
+      if (vectorRes.ok) vectorResults = await vectorRes.json();
+    } catch { /* fall through to text-only */ }
+  }
+
+  // Merge: text results first (exact match wins), then unique vector results
+  const seen = new Set(textResults.map(n => n.id));
+  for (const n of vectorResults) {
+    if (!seen.has(n.id)) { textResults.push(n); seen.add(n.id); }
+  }
+
+  return res.status(200).json({ results: textResults });
 };
