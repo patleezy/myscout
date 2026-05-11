@@ -489,21 +489,88 @@
       border-top: 1px solid rgba(245, 158, 11, 0.1);
     }
 
+    .summary-toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 6px;
+    }
+
     .summary-label {
       font-size: 10px;
       font-weight: 700;
       color: var(--accent);
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 6px;
       opacity: 0.75;
+    }
+
+    .summary-chevron {
+      font-size: 10px;
+      color: var(--accent);
+      opacity: 0.75;
+      transition: transform 0.15s;
+      display: inline-block;
     }
 
     .summary-text {
       font-size: 14px;
       color: var(--muted-2);
       line-height: 1.65;
+      overflow: hidden;
+      max-height: 600px;
+      transition: max-height 0.2s ease, opacity 0.15s ease;
+      opacity: 1;
     }
+
+    .summary-text.collapsed {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    /* Sort controls */
+    .sort-controls {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .btn-sort {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .btn-sort:hover { color: var(--text); border-color: rgba(255,255,255,0.18); }
+    .btn-sort.active { color: var(--accent); border-color: var(--accent); }
+
+    /* Load more */
+    .btn-load-more {
+      display: block;
+      width: 100%;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .btn-load-more:hover { color: var(--text); border-color: rgba(255,255,255,0.18); }
 
     /* ── Utility ──────────────────────────────────────────────── */
     .hidden { display: none !important; }
@@ -1023,6 +1090,11 @@
       </div>
     </div>
 
+    <div class="sort-controls">
+      <button class="btn-sort active" id="sort-newest" onclick="setSortOrder('desc')">Newest</button>
+      <button class="btn-sort" id="sort-oldest" onclick="setSortOrder('asc')">Oldest</button>
+    </div>
+
     <div class="notes-list" id="notes-list">
       <div class="loading-state"><span class="spinner"></span> Loading…</div>
     </div>
@@ -1072,6 +1144,10 @@
   let recentlySavedId = null;
   let searchTimer     = null;
   let showingFavorites = false;
+  let sortOrder        = 'desc';
+  let displayedNotes   = [];
+  const PAGE_SIZE      = 20;
+  let visibleCount     = PAGE_SIZE;
 
   // ── Auth mode toggle ──────────────────────────────────────────────────────────
   let authMode = 'login';
@@ -1153,11 +1229,17 @@
   }
 
   function renderNotes(notes, { searchMode = false } = {}) {
-    notesCount.textContent = notes.length
-      ? `${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`
+    displayedNotes = notes; // always stored in original desc order
+
+    const sorted    = sortOrder === 'asc' ? [...notes].reverse() : notes;
+    const page      = sorted.slice(0, visibleCount);
+    const remaining = sorted.length - page.length;
+
+    notesCount.textContent = sorted.length
+      ? `${sorted.length} ${sorted.length === 1 ? 'note' : 'notes'}`
       : '';
 
-    if (!notes.length) {
+    if (!sorted.length) {
       notesList.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">${searchMode ? '🔍' : '📓'}</div>
@@ -1166,7 +1248,7 @@
       return;
     }
 
-    notesList.innerHTML = notes.map(n => {
+    notesList.innerHTML = page.map(n => { // page is already sorted + sliced
       const hasTags    = Array.isArray(n.tags) && n.tags.length > 0;
       const isTagging  = n.id === recentlySavedId && !hasTags;
       const tagsHtml   = isTagging
@@ -1185,7 +1267,10 @@
 
       const summaryHtml = n.summary
         ? `<div class="note-summary" id="summary-${n.id}">
-             <div class="summary-label">AI Summary</div>
+             <button class="summary-toggle" onclick="toggleSummary('${n.id}')">
+               <span class="summary-label">AI Summary</span>
+               <span class="summary-chevron">▾</span>
+             </button>
              <div class="summary-text">${escapeHtml(n.summary)}</div>
            </div>`
         : `<div class="note-summary hidden" id="summary-${n.id}"></div>`;
@@ -1208,6 +1293,11 @@
         <div class="note-similar hidden" id="similar-${n.id}"></div>
       </article>`;
     }).join('');
+
+    if (remaining > 0) {
+      notesList.insertAdjacentHTML('beforeend',
+        `<button class="btn-load-more" onclick="loadMore()">Load ${remaining} more</button>`);
+    }
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -1252,7 +1342,8 @@
       notesList.innerHTML = '<div class="empty-state"><div class="empty-text" style="color:var(--muted)">Failed to load notes.</div></div>';
       return;
     }
-    allNotes = data;
+    allNotes     = data;
+    visibleCount = PAGE_SIZE;
     notesLabel.textContent = 'Saved';
     tagFilterChip.classList.add('hidden');
     renderNotes(activeTag ? allNotes.filter(n => n.tags?.includes(activeTag)) : allNotes);
@@ -1349,7 +1440,10 @@
     }
 
     summaryEl.innerHTML = `
-      <div class="summary-label">AI Summary</div>
+      <button class="summary-toggle" onclick="toggleSummary('${noteId}')">
+        <span class="summary-label">AI Summary</span>
+        <span class="summary-chevron">▾</span>
+      </button>
       <div class="summary-text">${escapeHtml(data.summary)}</div>
     `;
     summaryEl.classList.remove('hidden');
@@ -1444,28 +1538,53 @@
     }
   }
 
+  // ── Summary collapse ──────────────────────────────────────────────────────────
+  function toggleSummary(noteId) {
+    const el      = document.getElementById(`summary-${noteId}`);
+    const text    = el.querySelector('.summary-text');
+    const chevron = el.querySelector('.summary-chevron');
+    const collapsed = text.classList.toggle('collapsed');
+    chevron.style.transform = collapsed ? 'rotate(-90deg)' : '';
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────────────────────
+  function setSortOrder(order) {
+    if (sortOrder === order) return;
+    sortOrder    = order;
+    visibleCount = PAGE_SIZE;
+    document.getElementById('sort-newest').classList.toggle('active', order === 'desc');
+    document.getElementById('sort-oldest').classList.toggle('active', order === 'asc');
+    const base = showingFavorites ? allNotes.filter(n => n.is_favorite)
+               : activeTag        ? allNotes.filter(n => n.tags?.includes(activeTag))
+               : allNotes;
+    renderNotes(base);
+  }
+
+  // ── Load more ─────────────────────────────────────────────────────────────────
+  function loadMore() {
+    visibleCount += PAGE_SIZE;
+    renderNotes(displayedNotes);
+  }
+
   // ── Tag filter ────────────────────────────────────────────────────────────────
   function filterByTag(tag) {
-    activeTag = tag;
+    activeTag    = tag;
+    visibleCount = PAGE_SIZE;
     searchInput.value = '';
     searchClear.classList.add('hidden');
-    notesLabel.textContent  = 'Saved';
+    notesLabel.textContent    = 'Saved';
     tagFilterText.textContent = tag;
     tagFilterChip.classList.remove('hidden');
-    const filtered = allNotes.filter(n => n.tags?.includes(tag));
-    notesCount.textContent = filtered.length
-      ? `${filtered.length} ${filtered.length === 1 ? 'note' : 'notes'}` : '';
-    renderNotes(filtered);
+    renderNotes(allNotes.filter(n => n.tags?.includes(tag)));
   }
 
   function clearTagFilter() {
-    activeTag = null;
+    activeTag        = null;
     showingFavorites = false;
+    visibleCount     = PAGE_SIZE;
     document.getElementById('btn-favorites').classList.remove('active');
     tagFilterChip.classList.add('hidden');
     notesLabel.textContent = 'Saved';
-    notesCount.textContent = allNotes.length
-      ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
     renderNotes(allNotes);
   }
 
@@ -1493,19 +1612,17 @@
 
   function toggleFavoritesFilter() {
     showingFavorites = !showingFavorites;
-    activeTag = null;
+    activeTag    = null;
+    visibleCount = PAGE_SIZE;
     searchInput.value = '';
     searchClear.classList.add('hidden');
     tagFilterChip.classList.add('hidden');
     document.getElementById('btn-favorites').classList.toggle('active', showingFavorites);
     if (showingFavorites) {
       notesLabel.textContent = 'Favorites';
-      const favs = allNotes.filter(n => n.is_favorite);
-      notesCount.textContent = favs.length ? `${favs.length} ${favs.length === 1 ? 'note' : 'notes'}` : '';
-      renderNotes(favs);
+      renderNotes(allNotes.filter(n => n.is_favorite));
     } else {
       notesLabel.textContent = 'Saved';
-      notesCount.textContent = allNotes.length ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
       renderNotes(allNotes);
     }
   }
