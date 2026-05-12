@@ -400,6 +400,26 @@
       word-break: break-word;
     }
 
+    .note-content.clamped {
+      max-height: 6.8em; /* 4 lines × 1.7 */
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+    }
+
+    .btn-read-more {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 4px 0 0;
+      opacity: 0.85;
+    }
+
+    .btn-read-more:hover { opacity: 1; }
+
     .note-content a { color: var(--accent); text-decoration: none; }
     .note-content a:hover { text-decoration: underline; }
     .note-content strong { font-weight: 700; }
@@ -1164,6 +1184,8 @@
             <button class="toolbar-btn" onclick="insertPrefix('> ')" title="Blockquote">&gt; Quote</button>
             <span class="toolbar-sep"></span>
             <button class="toolbar-btn" onclick="insertPrefix('    ')" title="Indent">→ Indent</button>
+            <span class="toolbar-sep"></span>
+            <button class="toolbar-btn" onclick="insertLink()" title="Insert link">🔗 Link</button>
           </div>
           <textarea
             class="compose-textarea"
@@ -1263,6 +1285,7 @@
   let visibleCount     = PAGE_SIZE;
   let pendingDelete    = null;
   let activeHighlight  = '';
+  const expandedNotes  = new Set();
 
   // ── Auth mode toggle ──────────────────────────────────────────────────────────
   let authMode = 'login';
@@ -1399,10 +1422,18 @@
         ? highlightInHtml(renderMarkdown(n.content), highlight)
         : renderMarkdown(n.content);
 
+      const isLong      = n.content.trim().split(/\s+/).length > 55;
+      const isExpanded  = expandedNotes.has(n.id);
+      const clampClass  = isLong && !isExpanded ? ' clamped' : '';
+      const readMoreBtn = isLong
+        ? `<button class="btn-read-more" onclick="toggleExpand('${n.id}', this)">${isExpanded ? 'Read less ▴' : 'Read more ▾'}</button>`
+        : '';
+
       return `
       <article class="note-card" data-id="${n.id}">
         ${ogHtml}
-        <div class="note-content">${contentHtml}</div>
+        <div class="note-content${clampClass}">${contentHtml}</div>
+        ${readMoreBtn}
         ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
         <div class="note-footer">
           <div><span class="note-date">${formatDate(n.created_at)}</span>${readTime}</div>
@@ -1901,12 +1932,47 @@
   }
 
   function renderMarkdown(raw) {
-    return linkifyAndEscape(raw)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g,     '<em>$1</em>')
-      .replace(/~~(.+?)~~/g,     '<del>$1</del>')
-      .replace(/^&gt; (.+)$/gm,  '<blockquote>$1</blockquote>')
-      .replace(/^ {4}(.+)$/gm,  '<div class="note-indent">$1</div>');
+    // Protect [text](url) markdown links before auto-linkification
+    const mdLinks = [];
+    const protected_ = raw.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, text, url) => {
+      mdLinks.push(`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`);
+      return `\x02${mdLinks.length - 1}\x03`;
+    });
+    return linkifyAndEscape(protected_)
+      .replace(/\x02(\d+)\x03/g,   (_, i) => mdLinks[+i])
+      .replace(/\*\*(.+?)\*\*/g,   '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,       '<em>$1</em>')
+      .replace(/~~(.+?)~~/g,       '<del>$1</del>')
+      .replace(/^&gt; (.+)$/gm,    '<blockquote>$1</blockquote>')
+      .replace(/^ {4}(.+)$/gm,     '<div class="note-indent">$1</div>');
+  }
+
+  function insertLink() {
+    const el    = noteInput;
+    const start = el.selectionStart, end = el.selectionEnd;
+    const sel   = el.value.slice(start, end).trim();
+    const url   = prompt('URL:');
+    if (!url) return;
+    const text  = sel || prompt('Link text:') || url;
+    if (!text) return;
+    const md    = `[${text}](${url})`;
+    el.setRangeText(md, start, end, 'end');
+    el.focus();
+    el.dispatchEvent(new Event('input'));
+  }
+
+  function toggleExpand(noteId, btn) {
+    const card      = document.querySelector(`.note-card[data-id="${noteId}"]`);
+    const contentEl = card.querySelector('.note-content');
+    if (expandedNotes.has(noteId)) {
+      expandedNotes.delete(noteId);
+      contentEl.classList.add('clamped');
+      btn.textContent = 'Read more ▾';
+    } else {
+      expandedNotes.add(noteId);
+      contentEl.classList.remove('clamped');
+      btn.textContent = 'Read less ▴';
+    }
   }
 
   function wrapSel(before, after) {
