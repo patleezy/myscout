@@ -576,6 +576,110 @@
 
     .btn-load-more:hover { color: var(--text); border-color: rgba(255,255,255,0.18); }
 
+    /* Delete undo toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--text);
+      z-index: 200;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: toast-in 0.18s ease;
+      white-space: nowrap;
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .toast-undo {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .toast-undo:hover { opacity: 0.8; }
+
+    /* Inline note editing */
+    .edit-textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 1.7;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 80px;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .edit-textarea:focus { border-color: rgba(245,158,11,0.4); }
+
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-edit-save {
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 14px;
+      cursor: pointer;
+    }
+
+    .btn-edit-cancel {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+
+    .btn-edit-cancel:hover { color: var(--text); }
+
+    /* Search highlight */
+    mark.search-hl {
+      background: rgba(245,158,11,0.25);
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* Reading time */
+    .note-read-time {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+
     /* ── Utility ──────────────────────────────────────────────── */
     .hidden { display: none !important; }
 
@@ -1106,6 +1210,11 @@
   </div>
 </div>
 
+<div id="toast" class="toast hidden" role="status" aria-live="polite">
+  <span>Note deleted</span>
+  <button class="toast-undo" onclick="undoDelete()">Undo</button>
+</div>
+
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
@@ -1152,6 +1261,8 @@
   let displayedNotes   = [];
   const PAGE_SIZE      = 20;
   let visibleCount     = PAGE_SIZE;
+  let pendingDelete    = null;
+  let activeHighlight  = '';
 
   // ── Auth mode toggle ──────────────────────────────────────────────────────────
   let authMode = 'login';
@@ -1232,8 +1343,9 @@
       .replace(/"/g,  '&quot;');
   }
 
-  function renderNotes(notes, { searchMode = false } = {}) {
-    displayedNotes = notes; // always stored in original desc order
+  function renderNotes(notes, { searchMode = false, highlight = '' } = {}) {
+    displayedNotes   = notes; // always stored in original desc order
+    activeHighlight  = highlight;
 
     const sorted    = sortOrder === 'asc' ? [...notes].reverse() : notes;
     const page      = sorted.slice(0, visibleCount);
@@ -1279,17 +1391,27 @@
            </div>`
         : `<div class="note-summary hidden" id="summary-${n.id}"></div>`;
 
+      const wordCount  = n.content.trim().split(/\s+/).length;
+      const readMins   = Math.ceil(wordCount / 200);
+      const readTime   = wordCount >= 50 ? `<span class="note-read-time">· ${readMins} min read</span>` : '';
+
+      const contentHtml = highlight
+        ? highlightInHtml(renderMarkdown(n.content), highlight)
+        : renderMarkdown(n.content);
+
       return `
       <article class="note-card" data-id="${n.id}">
         ${ogHtml}
-        <div class="note-content">${renderMarkdown(n.content)}</div>
+        <div class="note-content">${contentHtml}</div>
         ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
         <div class="note-footer">
-          <span class="note-date">${formatDate(n.created_at)}</span>
+          <div><span class="note-date">${formatDate(n.created_at)}</span>${readTime}</div>
           <div style="display:flex;align-items:center">
             <button class="btn-favorite${n.is_favorite ? ' active' : ''}" onclick="toggleFavorite('${n.id}', this)">${n.is_favorite ? '★' : '☆'}</button>
             <button class="btn-summarize${n.summary ? ' hidden' : ''}" onclick="summarizeNote('${n.id}', this)">✦ Summarize</button>
             <button class="btn-summarize" onclick="showSimilar('${n.id}', this)" style="margin-left:6px">~ Similar</button>
+            <button class="btn-summarize" onclick="copyNote('${n.id}', this)" style="margin-left:6px" title="Copy">⎘ Copy</button>
+            <button class="btn-summarize" onclick="editNote('${n.id}')" style="margin-left:6px" title="Edit">✎ Edit</button>
             <button class="btn-delete" onclick="deleteNote('${n.id}', this)" title="Delete">✕</button>
           </div>
         </div>
@@ -1476,19 +1598,57 @@
 
   // ── Delete ───────────────────────────────────────────────────────────────────
   async function deleteNote(noteId, btn) {
-    btn.disabled = true;
-    const { error } = await db.from('notes').delete().eq('id', noteId);
-    if (error) { btn.disabled = false; alert('Failed to delete. Try again.'); return; }
-    allNotes = allNotes.filter(n => n.id !== noteId);
-    if (activeTag) {
-      renderNotes(allNotes.filter(n => n.tags?.includes(activeTag)));
-    } else if (searchInput.value.trim()) {
-      btn.closest('.note-card').remove();
-    } else {
-      renderNotes(allNotes);
+    const note = allNotes.find(n => n.id === noteId);
+    if (!note) return;
+
+    // Commit any prior pending delete immediately before queuing a new one
+    if (pendingDelete) {
+      clearTimeout(pendingDelete.timeoutId);
+      await db.from('notes').delete().eq('id', pendingDelete.noteId);
+      pendingDelete = null;
     }
-    notesCount.textContent = allNotes.length
-      ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
+
+    allNotes = allNotes.filter(n => n.id !== noteId);
+    btn.closest('.note-card').remove();
+
+    const currentView = showingFavorites ? allNotes.filter(n => n.is_favorite)
+                      : activeTag        ? allNotes.filter(n => n.tags?.includes(activeTag))
+                      : allNotes;
+    notesCount.textContent = currentView.length
+      ? `${currentView.length} ${currentView.length === 1 ? 'note' : 'notes'}` : '';
+
+    pendingDelete = {
+      noteId,
+      note,
+      timeoutId: setTimeout(async () => {
+        await db.from('notes').delete().eq('id', noteId);
+        pendingDelete = null;
+        hideToast();
+      }, 4000)
+    };
+    showToast();
+  }
+
+  function undoDelete() {
+    if (!pendingDelete) return;
+    clearTimeout(pendingDelete.timeoutId);
+    const { note } = pendingDelete;
+    pendingDelete   = null;
+    hideToast();
+    allNotes = [...allNotes, note].sort((a, b) =>
+      new Date(b.created_at) - new Date(a.created_at));
+    const base = showingFavorites ? allNotes.filter(n => n.is_favorite)
+               : activeTag        ? allNotes.filter(n => n.tags?.includes(activeTag))
+               : allNotes;
+    renderNotes(base);
+  }
+
+  function showToast() {
+    document.getElementById('toast').classList.remove('hidden');
+  }
+
+  function hideToast() {
+    document.getElementById('toast').classList.add('hidden');
   }
 
   // ── Search ────────────────────────────────────────────────────────────────────
@@ -1526,7 +1686,7 @@
     notesCount.textContent = data.results.length
       ? `${data.results.length} ${data.results.length === 1 ? 'result' : 'results'}`
       : '';
-    renderNotes(data.results, { searchMode: true });
+    renderNotes(data.results, { searchMode: true, highlight: query });
   }
 
   function clearSearch() {
@@ -1811,6 +1971,88 @@
   document.getElementById('chat-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') askNotes();
   });
+
+  // ── Inline edit ───────────────────────────────────────────────────────────────
+  function editNote(noteId) {
+    const note      = allNotes.find(n => n.id === noteId);
+    if (!note) return;
+    const card      = document.querySelector(`.note-card[data-id="${noteId}"]`);
+    const contentEl = card.querySelector('.note-content');
+    contentEl.innerHTML = `
+      <textarea class="edit-textarea" id="edit-ta-${noteId}"></textarea>
+      <div class="edit-actions">
+        <button class="btn-edit-save"   onclick="saveEdit('${noteId}')">Save</button>
+        <button class="btn-edit-cancel" onclick="cancelEdit('${noteId}')">Cancel</button>
+      </div>`;
+    const ta = document.getElementById(`edit-ta-${noteId}`);
+    ta.value = note.content;
+    ta.style.height = Math.max(ta.scrollHeight, 80) + 'px';
+    ta.focus();
+  }
+
+  async function saveEdit(noteId) {
+    const note = allNotes.find(n => n.id === noteId);
+    if (!note) return;
+    const ta      = document.getElementById(`edit-ta-${noteId}`);
+    const content = ta.value.trim();
+    if (!content) return;
+
+    const card      = document.querySelector(`.note-card[data-id="${noteId}"]`);
+    const contentEl = card.querySelector('.note-content');
+    note.content    = content;
+    contentEl.innerHTML = activeHighlight
+      ? highlightInHtml(renderMarkdown(content), activeHighlight)
+      : renderMarkdown(content);
+
+    const { error } = await db.from('notes').update({ content }).eq('id', noteId);
+    if (error) {
+      alert('Failed to save. Please try again.');
+      contentEl.innerHTML = renderMarkdown(note.content);
+    }
+  }
+
+  function cancelEdit(noteId) {
+    const note      = allNotes.find(n => n.id === noteId);
+    if (!note) return;
+    const card      = document.querySelector(`.note-card[data-id="${noteId}"]`);
+    const contentEl = card.querySelector('.note-content');
+    contentEl.innerHTML = activeHighlight
+      ? highlightInHtml(renderMarkdown(note.content), activeHighlight)
+      : renderMarkdown(note.content);
+  }
+
+  // ── Copy to clipboard ─────────────────────────────────────────────────────────
+  async function copyNote(noteId, btn) {
+    const note = allNotes.find(n => n.id === noteId);
+    if (!note) return;
+    try {
+      await navigator.clipboard.writeText(note.content);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = note.content;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = '⎘ Copy'; }, 1500);
+  }
+
+  // ── Search highlight ──────────────────────────────────────────────────────────
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function highlightInHtml(html, query) {
+    const words = query.trim().split(/\s+/).filter(w => w.length > 1);
+    if (!words.length) return html;
+    const re = new RegExp(`(${words.map(escapeRegex).join('|')})`, 'gi');
+    // Only replace in text nodes (between > and <), not inside tags/attributes
+    return html.replace(/>([^<]+)</g, (_, text) =>
+      '>' + text.replace(re, '<mark class="search-hl">$1</mark>') + '<'
+    );
+  }
 
   // ── Auth state ────────────────────────────────────────────────────────────────
   db.auth.onAuthStateChange((_event, session) => {
