@@ -524,21 +524,24 @@
     .summary-toggle:hover .summary-label   { opacity: 1; }
 
     .summary-label {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--accent);
       letter-spacing: 0.1em;
       text-transform: uppercase;
       opacity: 0.75;
+      line-height: 1;
     }
 
     .summary-chevron {
-      font-size: 14px;
+      font-size: 16px;
       color: var(--accent);
       opacity: 1;
       transition: transform 0.15s;
       display: inline-block;
       line-height: 1;
+      position: relative;
+      top: 0.5px;
     }
 
     .summary-text {
@@ -1422,7 +1425,7 @@
         ? highlightInHtml(renderMarkdown(n.content), highlight)
         : renderMarkdown(n.content);
 
-      const isLong      = n.content.trim().split(/\s+/).length > 55;
+      const isLong      = n.content.trim().split(/\s+/).length > 100;
       const isExpanded  = expandedNotes.has(n.id);
       const clampClass  = isLong && !isExpanded ? ' clamped' : '';
       const readMoreBtn = isLong
