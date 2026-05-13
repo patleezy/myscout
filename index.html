@@ -387,10 +387,48 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px 22px;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, transform 0.22s ease;
+      will-change: transform;
+      position: relative;
+      z-index: 1;
     }
 
     .note-card:hover { border-color: rgba(255, 255, 255, 0.12); }
+    .note-card.is-swiping { transition: border-color 0.15s; }
+
+    /* Swipe-to-delete row */
+    .swipe-row {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .swipe-delete-bg {
+      position: absolute;
+      inset: 0;
+      background: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 22px;
+      font-size: 22px;
+      color: #fff;
+    }
+
+    /* Pin */
+    .btn-pin { background: none; border: none; font-size: 14px; color: var(--muted); cursor: pointer; padding: 3px 4px 3px 0; transition: color 0.15s; line-height: 1; opacity: 0.45; }
+    .btn-pin.active { opacity: 1; color: var(--accent); }
+    .btn-pin:hover { opacity: 0.85; }
+
+    .pin-divider {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-align: center;
+      padding: 2px 0;
+      opacity: 0.4;
+      user-select: none;
+    }
 
     .note-content {
       font-size: 15px;
@@ -524,21 +562,24 @@
     .summary-toggle:hover .summary-label   { opacity: 1; }
 
     .summary-label {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--accent);
       letter-spacing: 0.1em;
       text-transform: uppercase;
       opacity: 0.75;
+      line-height: 1;
     }
 
     .summary-chevron {
-      font-size: 14px;
+      font-size: 16px;
       color: var(--accent);
       opacity: 1;
       transition: transform 0.15s;
       display: inline-block;
       line-height: 1;
+      position: relative;
+      top: 0.5px;
     }
 
     .summary-text {
@@ -922,6 +963,121 @@
     .btn-favorites:hover { border-color: var(--accent); color: var(--accent); }
     .btn-favorites.active { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: var(--accent); }
 
+    /* ── Tag manager modal ───────────────────────────────────────── */
+    .tag-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .tag-modal.hidden { display: none !important; }
+
+    .tag-modal-backdrop {
+      flex: 1;
+      background: rgba(0,0,0,0.55);
+    }
+
+    .tag-modal-sheet {
+      background: #1c1c1c;
+      border-radius: 16px 16px 0 0;
+      max-height: 72vh;
+      overflow-y: auto;
+      padding: 20px 20px 40px;
+      animation: sheet-up 0.22s ease;
+    }
+
+    @keyframes sheet-up {
+      from { transform: translateY(40px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .tag-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .tag-modal-header span {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .tag-modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+
+    .tag-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tag-row:last-child { border-bottom: none; }
+
+    .tag-row-name {
+      flex: 1;
+      font-size: 14px;
+      color: var(--text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tag-row-count {
+      font-size: 12px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .tag-rename-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 3px 7px;
+      outline: none;
+      min-width: 0;
+    }
+
+    .btn-tag-action {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--muted);
+      padding: 4px 5px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: color 0.12s;
+    }
+
+    .btn-tag-action.rename:hover { color: var(--accent); }
+    .btn-tag-action.delete:hover { color: #ef4444; }
+
+    .tag-empty {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px 0;
+    }
+
     /* ── Blockquote ──────────────────────────────────────────────── */
     .note-content blockquote {
       border-left: 3px solid rgba(245,158,11,0.5);
@@ -1223,6 +1379,7 @@
     <div class="sort-controls">
       <button class="btn-sort active" id="sort-newest" onclick="setSortOrder('desc')">Newest</button>
       <button class="btn-sort" id="sort-oldest" onclick="setSortOrder('asc')">Oldest</button>
+      <button class="btn-sort" onclick="openTagManager()">Tags</button>
     </div>
 
     <div class="notes-list" id="notes-list">
@@ -1235,6 +1392,21 @@
 <div id="toast" class="toast hidden" role="status" aria-live="polite">
   <span>Note deleted</span>
   <button class="toast-undo" onclick="undoDelete()">Undo</button>
+</div>
+
+<div id="hint-toast" class="toast hidden" role="status" aria-live="polite" style="gap:0">
+  <span id="hint-msg"></span>
+</div>
+
+<div id="tag-modal" class="tag-modal hidden">
+  <div class="tag-modal-backdrop" onclick="closeTagManager()"></div>
+  <div class="tag-modal-sheet">
+    <div class="tag-modal-header">
+      <span>Manage Tags</span>
+      <button class="tag-modal-close" onclick="closeTagManager()">✕</button>
+    </div>
+    <div id="tag-modal-list" class="tag-modal-list"></div>
+  </div>
 </div>
 
 <!-- Supabase JS (UMD) -->
@@ -1286,6 +1458,8 @@
   let pendingDelete    = null;
   let activeHighlight  = '';
   const expandedNotes  = new Set();
+  const pinnedIds      = new Set(JSON.parse(localStorage.getItem('myscout_pins') || '[]'));
+  let swipeState       = null;
 
   // ── Auth mode toggle ──────────────────────────────────────────────────────────
   let authMode = 'login';
@@ -1370,15 +1544,18 @@
     displayedNotes   = notes; // always stored in original desc order
     activeHighlight  = highlight;
 
-    const sorted    = sortOrder === 'asc' ? [...notes].reverse() : notes;
-    const page      = sorted.slice(0, visibleCount);
-    const remaining = sorted.length - page.length;
+    const sorted   = sortOrder === 'asc' ? [...notes].reverse() : notes;
+    const pinned   = sorted.filter(n => pinnedIds.has(n.id));
+    const unpinned = sorted.filter(n => !pinnedIds.has(n.id));
+    const ordered  = [...pinned, ...unpinned];
+    const page     = ordered.slice(0, visibleCount);
+    const remaining = ordered.length - page.length;
 
-    notesCount.textContent = sorted.length
-      ? `${sorted.length} ${sorted.length === 1 ? 'note' : 'notes'}`
+    notesCount.textContent = ordered.length
+      ? `${ordered.length} ${ordered.length === 1 ? 'note' : 'notes'}`
       : '';
 
-    if (!sorted.length) {
+    if (!ordered.length) {
       notesList.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">${searchMode ? '🔍' : '📓'}</div>
@@ -1422,7 +1599,7 @@
         ? highlightInHtml(renderMarkdown(n.content), highlight)
         : renderMarkdown(n.content);
 
-      const isLong      = n.content.trim().split(/\s+/).length > 55;
+      const isLong      = n.content.trim().split(/\s+/).length > 100;
       const isExpanded  = expandedNotes.has(n.id);
       const clampClass  = isLong && !isExpanded ? ' clamped' : '';
       const readMoreBtn = isLong
@@ -1430,26 +1607,39 @@
         : '';
 
       return `
-      <article class="note-card" data-id="${n.id}">
-        ${ogHtml}
-        <div class="note-content${clampClass}">${contentHtml}</div>
-        ${readMoreBtn}
-        ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
-        <div class="note-footer">
-          <div><span class="note-date">${formatDate(n.created_at)}</span>${readTime}</div>
-          <div style="display:flex;align-items:center">
-            <button class="btn-favorite${n.is_favorite ? ' active' : ''}" onclick="toggleFavorite('${n.id}', this)">${n.is_favorite ? '★' : '☆'}</button>
-            <button class="btn-summarize${n.summary ? ' hidden' : ''}" onclick="summarizeNote('${n.id}', this)">✦ Summarize</button>
-            <button class="btn-summarize" onclick="showSimilar('${n.id}', this)" style="margin-left:6px">~ Similar</button>
-            <button class="btn-summarize" onclick="copyNote('${n.id}', this)" style="margin-left:6px" title="Copy">⎘ Copy</button>
-            <button class="btn-summarize" onclick="editNote('${n.id}')" style="margin-left:6px" title="Edit">✎ Edit</button>
-            <button class="btn-delete" onclick="deleteNote('${n.id}', this)" title="Delete">✕</button>
-          </div>
-        </div>
-        ${summaryHtml}
-        <div class="note-similar hidden" id="similar-${n.id}"></div>
-      </article>`;
+      <div class="swipe-row">
+        <div class="swipe-delete-bg">🗑</div>
+        <article class="note-card" data-id="${n.id}">
+          ${ogHtml}
+          <div class="note-content${clampClass}">${contentHtml}</div>
+          ${readMoreBtn}
+          ${tagsHtml ? `<div class="note-tags">${tagsHtml}</div>` : ''}
+          <div class="note-footer">
+            <div><span class="note-date">${formatDate(n.created_at)}</span>${readTime}</div>
+            <div style="display:flex;align-items:center">
+              <button class="btn-pin${pinnedIds.has(n.id) ? ' active' : ''}" onclick="togglePin('${n.id}', this)" title="${pinnedIds.has(n.id) ? 'Unpin' : 'Pin'}">📌</button>
+              <button class="btn-favorite${n.is_favorite ? ' active' : ''}" onclick="toggleFavorite('${n.id}', this)">${n.is_favorite ? '★' : '☆'}</button>
+              <button class="btn-summarize${n.summary ? ' hidden' : ''}" onclick="summarizeNote('${n.id}', this)">✦ Summarize</button>
+              <button class="btn-summarize" onclick="showSimilar('${n.id}', this)" style="margin-left:6px">~ Similar</button>
+              <button class="btn-summarize" onclick="copyNote('${n.id}', this)" style="margin-left:6px" title="Copy">⎘ Copy</button>
+              <button class="btn-summarize" onclick="editNote('${n.id}')" style="margin-left:6px" title="Edit">✎ Edit</button>
+              <button class="btn-delete" onclick="deleteNote('${n.id}', this)" title="Delete">✕</button>
+            </div>
+          ${summaryHtml}
+          <div class="note-similar hidden" id="similar-${n.id}"></div>
+        </article>
+      </div>`;
     }).join('');
+
+    // Insert pin divider between pinned and unpinned sections
+    const pinnedInPage = page.filter(n => pinnedIds.has(n.id)).length;
+    if (pinnedInPage > 0 && pinnedInPage < page.length) {
+      const rows = notesList.querySelectorAll('.swipe-row');
+      if (rows[pinnedInPage]) {
+        rows[pinnedInPage].insertAdjacentHTML('beforebegin',
+          '<div class="pin-divider">─── pinned ───</div>');
+      }
+    }
 
     if (remaining > 0) {
       notesList.insertAdjacentHTML('beforeend',
@@ -1504,6 +1694,13 @@
     notesLabel.textContent = 'Saved';
     tagFilterChip.classList.add('hidden');
     renderNotes(activeTag ? allNotes.filter(n => n.tags?.includes(activeTag)) : allNotes);
+
+    if (!localStorage.getItem('myscout_swipe_hint') && data.length > 0) {
+      setTimeout(() => {
+        showHintToast('Tip: swipe a card left to delete');
+        localStorage.setItem('myscout_swipe_hint', '1');
+      }, 1800);
+    }
   }
 
   let composeMode = 'note';
@@ -1640,7 +1837,10 @@
     }
 
     allNotes = allNotes.filter(n => n.id !== noteId);
-    btn.closest('.note-card').remove();
+    const card = btn
+      ? btn.closest('.note-card')
+      : document.querySelector(`.note-card[data-id="${noteId}"]`);
+    (card?.closest('.swipe-row') || card)?.remove();
 
     const currentView = showingFavorites ? allNotes.filter(n => n.is_favorite)
                       : activeTag        ? allNotes.filter(n => n.tags?.includes(activeTag))
@@ -1731,6 +1931,148 @@
         ? `${allNotes.length} ${allNotes.length === 1 ? 'note' : 'notes'}` : '';
       renderNotes(allNotes);
     }
+  }
+
+  // ── Pin ───────────────────────────────────────────────────────────────────────
+  function togglePin(noteId, btn) {
+    if (!pinnedIds.has(noteId) && pinnedIds.size >= 3) {
+      showHintToast('Max 3 notes can be pinned');
+      return;
+    }
+    pinnedIds.has(noteId) ? pinnedIds.delete(noteId) : pinnedIds.add(noteId);
+    localStorage.setItem('myscout_pins', JSON.stringify([...pinnedIds]));
+    const base = showingFavorites ? allNotes.filter(n => n.is_favorite)
+               : activeTag        ? allNotes.filter(n => n.tags?.includes(activeTag))
+               : allNotes;
+    renderNotes(base, { highlight: activeHighlight });
+  }
+
+  // ── Hint toast (auto-dismiss, no undo) ────────────────────────────────────────
+  function showHintToast(msg) {
+    const el = document.getElementById('hint-toast');
+    document.getElementById('hint-msg').textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(showHintToast._t);
+    showHintToast._t = setTimeout(() => el.classList.add('hidden'), 3000);
+  }
+
+  // ── Swipe to delete ───────────────────────────────────────────────────────────
+  (function attachSwipeListeners() {
+    notesList.addEventListener('touchstart', e => {
+      const card = e.target.closest('.note-card');
+      if (!card) return;
+      swipeState = {
+        card,
+        noteId: card.dataset.id,
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        currentX: 0,
+        direction: null,
+      };
+    }, { passive: true });
+
+    notesList.addEventListener('touchmove', e => {
+      if (!swipeState) return;
+      const dx = e.touches[0].clientX - swipeState.startX;
+      const dy = e.touches[0].clientY - swipeState.startY;
+
+      if (!swipeState.direction) {
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+          swipeState.direction = 'h';
+        } else if (Math.abs(dy) > 6) {
+          swipeState = null; return; // vertical scroll — abandon
+        } else return;
+      }
+
+      e.preventDefault();
+      const x = Math.min(0, dx);
+      swipeState.currentX = x;
+      swipeState.card.style.transform = `translateX(${x}px)`;
+      swipeState.card.classList.add('is-swiping');
+    }, { passive: false });
+
+    notesList.addEventListener('touchend', () => {
+      if (!swipeState) return;
+      const { card, noteId, currentX } = swipeState;
+      swipeState = null;
+      card.classList.remove('is-swiping');
+
+      if (currentX < -80) {
+        card.style.transform = 'translateX(-110%)';
+        card.style.transition = 'transform 0.22s ease';
+        setTimeout(() => deleteNote(noteId, null), 220);
+      } else {
+        card.style.transform = '';
+      }
+    }, { passive: true });
+  })();
+
+  // ── Tag manager ───────────────────────────────────────────────────────────────
+  function openTagManager() {
+    renderTagManager();
+    document.getElementById('tag-modal').classList.remove('hidden');
+  }
+
+  function closeTagManager() {
+    document.getElementById('tag-modal').classList.add('hidden');
+  }
+
+  function renderTagManager() {
+    const counts = {};
+    allNotes.forEach(n => (n.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+    const tags = Object.keys(counts).sort();
+    const list = document.getElementById('tag-modal-list');
+
+    if (!tags.length) {
+      list.innerHTML = '<div class="tag-empty">No tags yet — they\'re added automatically when you save a note.</div>';
+      return;
+    }
+
+    list.innerHTML = tags.map(t => `
+      <div class="tag-row" data-tag="${escapeHtml(t)}">
+        <span class="tag-row-name">${escapeHtml(t)}</span>
+        <span class="tag-row-count">${counts[t]} ${counts[t] === 1 ? 'note' : 'notes'}</span>
+        <button class="btn-tag-action rename" onclick="startTagRename('${escapeHtml(t)}')" title="Rename">✎</button>
+        <button class="btn-tag-action delete" onclick="deleteTagFromAll('${escapeHtml(t)}')" title="Delete">✕</button>
+      </div>`).join('');
+  }
+
+  function startTagRename(tag) {
+    const row = document.querySelector(`#tag-modal-list .tag-row[data-tag="${CSS.escape(tag)}"]`);
+    if (!row) return;
+    const nameEl = row.querySelector('.tag-row-name');
+    const input  = document.createElement('input');
+    input.className   = 'tag-rename-input';
+    input.value       = tag;
+    input.maxLength   = 40;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+    const confirm = () => confirmTagRename(tag, input.value.trim());
+    input.addEventListener('blur',   confirm);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { input.value = tag; input.blur(); } });
+  }
+
+  async function confirmTagRename(oldTag, newTag) {
+    if (!newTag || newTag === oldTag) { renderTagManager(); return; }
+    const affected = allNotes.filter(n => n.tags?.includes(oldTag));
+    affected.forEach(n => { n.tags = n.tags.map(t => t === oldTag ? newTag : t); });
+    await Promise.all(affected.map(n => db.from('notes').update({ tags: n.tags }).eq('id', n.id)));
+    renderTagManager();
+    renderNotes(displayedNotes, { highlight: activeHighlight });
+  }
+
+  async function deleteTagFromAll(tag) {
+    const affected = allNotes.filter(n => n.tags?.includes(tag));
+    affected.forEach(n => { n.tags = n.tags.filter(t => t !== tag); });
+    await Promise.all(affected.map(n => db.from('notes').update({ tags: n.tags }).eq('id', n.id)));
+    if (activeTag === tag) {
+      activeTag = null;
+      tagFilterChip.classList.add('hidden');
+    }
+    renderTagManager();
+    renderNotes(displayedNotes, { highlight: activeHighlight });
+    showHintToast(`Tag removed from ${affected.length} ${affected.length === 1 ? 'note' : 'notes'}`);
   }
 
   // ── Summary collapse ──────────────────────────────────────────────────────────
